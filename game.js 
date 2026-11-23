@@ -329,3 +329,4 @@ window.openGame = openGame;
 window.closeGame = closeGame;
 
 loadData();
+

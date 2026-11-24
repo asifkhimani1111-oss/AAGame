@@ -1,0 +1,458 @@
+
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#101326">
+<title>A&AGame - Bottle Colour</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:#101326;
+  color:white;
+  font-family:Arial,sans-serif;
+  text-align:center;
+  padding-bottom:25px;
+}
+header{
+  padding:17px;
+  background:#191f3b;
+  font-size:23px;
+  font-weight:bold;
+}
+button{
+  border:0;
+  border-radius:12px;
+  padding:12px 18px;
+  margin:6px;
+  font-size:16px;
+  font-weight:bold;
+  cursor:pointer;
+  background:#ffd34e;
+  color:#171717;
+}
+button:disabled{
+  opacity:.4;
+  cursor:not-allowed;
+}
+.screen{display:none;padding:15px}
+.screen.active{display:block}
+.menu-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  max-width:520px;
+  margin:25px auto;
+}
+.game-tile{
+  min-height:100px;
+  background:#222b50;
+  border:1px solid #46527e;
+  border-radius:16px;
+  color:white;
+  font-size:18px;
+}
+.game-tile span{
+  display:block;
+  font-size:30px;
+  margin-bottom:8px;
+}
+.info{
+  margin:12px auto;
+  color:#dce4ff;
+  font-size:16px;
+}
+#bottles{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  align-items:flex-end;
+  gap:20px 13px;
+  max-width:650px;
+  margin:28px auto;
+}
+.bottle-wrap{
+  width:68px;
+  height:190px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  position:relative;
+}
+.bottle{
+  width:57px;
+  height:155px;
+  position:relative;
+  border:3px solid rgba(225,245,255,.85);
+  border-top:0;
+  border-radius:13px 13px 21px 21px;
+  background:linear-gradient(90deg,
+    rgba(255,255,255,.12),
+    rgba(255,255,255,.02) 35%,
+    rgba(255,255,255,.15));
+  box-shadow:inset 5px 0 7px rgba(255,255,255,.18),
+             4px 5px 12px rgba(0,0,0,.25);
+  display:flex;
+  flex-direction:column-reverse;
+  overflow:visible;
+  cursor:pointer;
+}
+.bottle:before{
+  content:"";
+  position:absolute;
+  width:23px;
+  height:20px;
+  left:14px;
+  top:-19px;
+  border:3px solid rgba(225,245,255,.85);
+  border-bottom:0;
+  border-radius:5px 5px 0 0;
+  background:rgba(255,255,255,.07);
+}
+.bottle:after{
+  content:"";
+  position:absolute;
+  width:8px;
+  height:105px;
+  left:6px;
+  top:18px;
+  border-radius:10px;
+  background:rgba(255,255,255,.23);
+  pointer-events:none;
+}
+.cap{
+  position:absolute;
+  width:29px;
+  height:10px;
+  top:-25px;
+  left:11px;
+  border-radius:5px 5px 2px 2px;
+  background:linear-gradient(#ffe58b,#d69b20);
+  display:none;
+  z-index:3;
+}
+.bottle.capped .cap{display:block}
+.bottle.selected{
+  transform:translateY(-12px);
+  border-color:#ffe16a;
+  box-shadow:0 0 15px #ffe16a;
+}
+.layer{
+  height:25%;
+  width:100%;
+  flex-shrink:0;
+  border-top:1px solid rgba(255,255,255,.25);
+  position:relative;
+}
+.layer:first-child{
+  border-radius:0 0 15px 15px;
+}
+.bottle-number{
+  position:absolute;
+  bottom:-23px;
+  width:100%;
+  font-size:12px;
+  color:#aebbe4;
+}
+#message{
+  min-height:28px;
+  color:#ffe16a;
+  font-weight:bold;
+  margin:12px;
+}
+#nextBtn{background:#45dc8b}
+#homeBtn{background:#a8b9ff}
+.small-note{
+  color:#aebbe4;
+  font-size:13px;
+  line-height:1.5;
+}
+</style>
+</head>
+
+<body>
+
+<header>🎮 A&AGame</header>
+
+<section id="menu" class="screen active">
+  <h2>મુખ્ય મેનુ</h2>
+  <div class="menu-grid">
+    <button class="game-tile"><span>🚗</span>Car Speed</button>
+    <button class="game-tile"><span>🏍️</span>Bike Speed</button>
+    <button class="game-tile"><span>🎲</span>Ludo</button>
+    <button class="game-tile"><span>🎯</span>Carrom</button>
+    <button class="game-tile" onclick="startGame()">
+      <span>🧪</span>Bottle Colour
+    </button>
+    <button class="game-tile"><span>🏹</span>Arrow Puzzle</button>
+    <button class="game-tile"><span>🍎</span>K.H Fruits Business</button>
+    <button class="game-tile"><span>🧩</span>Puzzle Game</button>
+  </div>
+  <p class="small-note">Bottle Colour રમવા માટે તેના બટન પર ક્લિક કરો.</p>
+</section>
+
+<section id="game" class="screen">
+  <h2>🧪 Bottle Colour</h2>
+  <div class="info">
+    Level: <b id="level">1</b>
+    &nbsp; | &nbsp;
+    Moves: <b id="moves">0</b>
+  </div>
+
+  <p class="small-note">
+    પહેલા રંગવાળી બોટલ પસંદ કરો, પછી જ્યાં રંગ નાખવો હોય તે બોટલ પસંદ કરો.
+    એક સમયે એક લેયર જશે.
+  </p>
+
+  <div id="bottles"></div>
+
+  <div id="message">રંગ ગોઠવવાનું શરૂ કરો!</div>
+
+  <button onclick="restartLevel()">🔄 Restart</button>
+  <button id="nextBtn" onclick="nextLevel()" disabled>આગળનો લેવલ ➜</button>
+  <br>
+  <button id="homeBtn" onclick="goHome()">🏠 Home</button>
+</section>
+
+<script>
+const COLORS = [
+  "#f44336",
+  "#2196f3",
+  "#20c878",
+  "#ffca28",
+  "#a855f7",
+  "#ff7b28"
+];
+
+let levelNumber = 1;
+let bottles = [];
+let startLayout = [];
+let selected = -1;
+let moveCount = 0;
+let won = false;
+
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>{
+    s.classList.remove("active");
+  });
+  document.getElementById(id).classList.add("active");
+}
+
+function copyLayout(layout){
+  return layout.map(b=>[...b]);
+}
+
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+  return array;
+}
+
+/*
+  દરેક રંગના ચાર જ લેયર.
+  બે ખાલી બોટલ હંમેશાં શરૂઆતમાં રહેશે.
+  બે રંગની બોટલમાં ઉપરના લેયર એકબીજાના બદલેલા
+  હોવાથી પઝલને ખાલી બોટલની મદદથી ઉકેલી શકાય છે.
+*/
+function makePuzzle(){
+  const colorCount=Math.min(4+Math.floor((levelNumber-1)/2),6);
+  const colors=shuffle(COLORS.slice(0,colorCount));
+
+  let result=colors.map(c=>[c,c,c,c]);
+
+  // રંગોની બોટલોને જોડીમાં ગોઠવો
+  const order=shuffle([...Array(colorCount).keys()]);
+
+  for(let i=0;i+1<colorCount;i+=2){
+    const a=order[i];
+    const b=order[i+1];
+
+    // અસ્થાયી ખાલી બોટલનો ઉપયોગ કરીને
+    // બે રંગની ઉપરની એક-એક લેયર બદલો.
+    const colorA=result[a][3];
+    const colorB=result[b][3];
+
+    result[a].pop();
+    result[b].pop();
+    result[a].push(colorB);
+    result[b].push(colorA);
+  }
+
+  result.push([]);
+  result.push([]);
+
+  return result;
+}
+
+function startGame(){
+  levelNumber=1;
+  loadLevel();
+  showScreen("game");
+}
+
+function loadLevel(){
+  bottles=makePuzzle();
+  startLayout=copyLayout(bottles);
+  selected=-1;
+  moveCount=0;
+  won=false;
+  document.getElementById("nextBtn").disabled=true;
+  document.getElementById("message").textContent=
+    "બોટલ પસંદ કરીને રંગ ગોઠવો!";
+  render();
+}
+
+function render(){
+  const area=document.getElementById("bottles");
+  area.innerHTML="";
+
+  document.getElementById("level").textContent=levelNumber;
+  document.getElementById("moves").textContent=moveCount;
+
+  bottles.forEach((b,index)=>{
+    const wrap=document.createElement("div");
+    wrap.className="bottle-wrap";
+
+    const bottle=document.createElement("div");
+    bottle.className="bottle";
+
+    if(index===selected) bottle.classList.add("selected");
+
+    const full=b.length===4 && b.every(c=>c===b[0]);
+    if(full) bottle.classList.add("capped");
+
+    const cap=document.createElement("div");
+    cap.className="cap";
+    bottle.appendChild(cap);
+
+    b.forEach(color=>{
+      const layer=document.createElement("div");
+      layer.className="layer";
+      layer.style.background=color;
+      bottle.appendChild(layer);
+    });
+
+    bottle.onclick=()=>tapBottle(index);
+
+    const number=document.createElement("div");
+    number.className="bottle-number";
+    number.textContent=index+1;
+
+    wrap.appendChild(bottle);
+    wrap.appendChild(number);
+    area.appendChild(wrap);
+  });
+}
+
+function tapBottle(index){
+  if(won) return;
+
+  if(selected===-1){
+    if(bottles[index].length===0){
+      say("પહેલા રંગવાળી બોટલ પસંદ કરો.");
+      return;
+    }
+
+    selected=index;
+    say("હવે રંગ નાખવાની બોટલ પસંદ કરો.");
+    render();
+    return;
+  }
+
+  if(selected===index){
+    selected=-1;
+    say("બોટલ પસંદગી રદ થઈ.");
+    render();
+    return;
+  }
+
+  const source=bottles[selected];
+  const target=bottles[index];
+
+  if(source.length===0){
+    selected=-1;
+    render();
+    return;
+  }
+
+  const color=source[source.length-1];
+  const targetTop=target.length
+    ? target[target.length-1]
+    : null;
+
+  if(target.length>=4){
+    if(source.length>0){
+      selected=index;
+      say("આ બોટલ ભરાઈ ગઈ છે.");
+    }
+    render();
+    return;
+  }
+
+  if(target.length===0 || targetTop===color){
+    source.pop();
+    target.push(color);
+    moveCount++;
+    selected=-1;
+
+    document.getElementById("moves").textContent=moveCount;
+
+    if(checkWin()){
+      won=true;
+      say("🎉 સરસ! આ લેવલ પૂરું થયું!");
+      document.getElementById("nextBtn").disabled=false;
+    }else{
+      say("રંગ ખસેડાઈ ગયો. આગળ ચાલુ રાખો!");
+    }
+  }else{
+    // ખોટી બોટલ પર ક્લિક થાય તો બીજી બોટલ પસંદ કરી શકાય.
+    if(target.length>0){
+      selected=index;
+      say("આ બોટલમાં અલગ રંગ છે. બીજી બોટલ પસંદ કરો.");
+    }else{
+      say("આ ચાલ થઈ શકતી નથી.");
+    }
+  }
+
+  render();
+}
+
+function checkWin(){
+  return bottles.every(b=>{
+    if(b.length===0) return true;
+    return b.length===4 && b.every(c=>c===b[0]);
+  });
+}
+
+function say(message){
+  document.getElementById("message").textContent=message;
+}
+
+function restartLevel(){
+  bottles=copyLayout(startLayout);
+  selected=-1;
+  moveCount=0;
+  won=false;
+  document.getElementById("nextBtn").disabled=true;
+  say("લેવલ ફરી શરૂ થયો.");
+  render();
+}
+
+function nextLevel(){
+  if(!won) return;
+  levelNumber++;
+  loadLevel();
+}
+
+function goHome(){
+  showScreen("menu");
+}
+</script>
+
+</body>
+</html>

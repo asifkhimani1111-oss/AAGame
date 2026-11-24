@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>A&AGame - Bottle Colour</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #1e293b 0%, #090d16 100%);
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: rgba(15, 23, 42, 0.85);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #4f46e5, #3b82f6);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 8px 14px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+      transition: transform 0.15s, opacity 0.2s;
+    }
+
+    .btn:active:not(:disabled) {
+      transform: scale(0.94);
+    }
+
+    .btn:disabled {
+      background: #1e293b;
+      color: #64748b;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #10b981, #059669);
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.5);
+      animation: pulseBtn 1.4s infinite;
+    }
+
+    @keyframes pulseBtn {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+
+    .sub-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px;
+      z-index: 10;
+    }
+
+    .game-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin: 2px 0 6px;
+      z-index: 10;
+    }
+
+    .badge {
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 6px 16px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #f8fafc;
+    }
+
+    .win-banner {
+      text-align: center;
+      color: #34d399;
+      font-weight: 700;
+      font-size: 1.15rem;
+      min-height: 26px;
+      text-shadow: 0 2px 10px rgba(16, 185, 129, 0.5);
+      z-index: 10;
+    }
+
+    .arena {
+      flex: 1;
+      position: relative;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    canvas#gameCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: manipulation;
+    }
+
+    .bottom-controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding: 12px 10px;
+      flex-wrap: wrap;
+      z-index: 10;
+    }
+
+    .ad-banner-container {
+      width: 100%;
+      min-height: 52px;
+      background: #060911;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #64748b;
+      font-size: 0.75rem;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <div class="brand">🎮 A&AGame</div>
+    <button class="btn" onclick="goHome()">🏠 Home</button>
+  </div>
+
+  <div class="sub-bar">
+    <button class="btn" onclick="prevLevel()">← પાછા</button>
+    <div class="game-title">💧 Bottle Colour</div>
+    <button class="btn" id="soundBtn" onclick="toggleSound()">🔊 Sound ON</button>
+  </div>
+
+  <div class="stats-row">
+    <div class="badge" id="levelDisplay">Level: 1</div>
+    <div class="badge" id="movesDisplay">Moves: 0</div>
+  </div>
+
+  <div class="win-banner" id="winBanner"></div>
+
+  <div class="arena" id="arenaBox">
+    <canvas id="gameCanvas"></canvas>
+  </div>
+
+  <div class="bottom-controls">
+    <button class="btn" onclick="restartLevel()">🔄 Restart</button>
+    <button class="btn" id="undoBtn" onclick="undoMove()" disabled>↩ Undo</button>
+    <button class="btn" id="extraBottleBtn" onclick="addExtraBottle()">➕ +1 બોટલ (Ad)</button>
+    <button class="btn" id="nextBtn" onclick="nextLevel()" disabled>આગળ →</button>
+  </div>
+
+  <div class="ad-banner-container" id="adBannerSlot">
+    <span>A&AGame • Bottle Colour Banner Ad Slot (AdMob Ready)</span>
+  </div>
+
+  <script>
+    const AdManager = {
+      levelsCompletedSinceAd: 0,
+      onLevelComplete: function() {
+        this.levelsCompletedSinceAd++;
+        if (this.levelsCompletedSinceAd >= 3) {
+          this.levelsCompletedSinceAd = 0;
+          if (window.AndroidAds && typeof window.AndroidAds.showInterstitial === 'function') {
+            window.AndroidAds.showInterstitial();
+          }
+        }
+      },
+      showRewardedAd: function(onRewardEarned) {
+        if (window.AndroidAds && typeof window.AndroidAds.showRewarded === 'function') {
+          window.AndroidAds.showRewarded();
+        }
+        onRewardEarned();
+      }
+    };
+
+    let soundEnabled = true;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) audioCtx = new AudioContext();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playBubbleSound(freq = 480) {
+      if (!soundEnabled) return;
+      initAudio();
+      if (!audioCtx) return;
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(freq * 1.45, audioCtx.currentTime + 0.12);
+
+      gain.gain.setValueAtTime(0.14, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.13);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.13);
+    }
+
+    function playPourWaterSound(durationSec = 0.65) {
+      if (!soundEnabled) return;
+      initAudio();
+      if (!audioCtx) return;
+
+      const steps = 8;
+      for (let i = 0; i < steps; i++) {
+        const delay = (i / steps) * durationSec;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        const baseFreq = 320 + i * 35 + Math.random() * 40;
+        osc.frequency.setValueAtTime(baseFreq, audioCtx.currentTime + delay);
+        osc.frequency.exponentialRampToValueAtTime(baseFreq + 140, audioCtx.currentTime + delay + 0.08);
+
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + 0.09);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(audioCtx.currentTime + delay);
+        osc.stop(audioCtx.currentTime + delay + 0.09);
+      }
+    }
+
+    function playWinSound() {
+      if (!soundEnabled) return;
+      initAudio();
+      if (!audioCtx) return;
+      const notes = [523.25, 659.25, 783.99, 1046.5];
+      notes.forEach((f, idx) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(f, audioCtx.currentTime + idx * 0.12);
+        gain.gain.setValueAtTime(0.16, audioCtx.currentTime + idx * 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + idx * 0.12 + 0.3);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(audioCtx.currentTime + idx * 0.12);
+        osc.stop(audioCtx.currentTime + idx * 0.12 + 0.3);
+      });
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('soundBtn').innerText = soundEnabled ? '🔊 Sound ON' : '🔇 Sound OFF';
+    }
+
+    const CAPACITY = 4;
+
+    const WATER_COLORS = {
+      red:    { main: '#ff2a2a', light: '#ff7575', dark: '#b80000' },
+      blue:   { main: '#0ea5e9', light: '#7dd3fc', dark: '#0369a1' },
+      green:  { main: '#22c55e', light: '#86efac', dark: '#15803d' },
+      yellow: { main: '#eab308', light: '#fef08a', dark: '#a16207' },
+      purple: { main: '#a855f7', light: '#d8b4fe', dark: '#6b21a8' },
+      orange: { main: '#f97316', light: '#fdba74', dark: '#c2410c' },
+      pink:   { main: '#ec4899', light: '#f9a8d4', dark: '#9d174d' },
+      teal:   { main: '#14b8a6', light: '#5eead4', dark: '#0f766e' }
+    };
+    const COLOR_KEYS = Object.keys(WATER_COLORS);
+
+    let currentLevel = parseInt(localStorage.getItem('aa_liquid_level')) || 1;
+    let bottles = [];
+    let history = [];
+    let moves = 0;
+    let selectedIndex = -1;
+    let extraBottleUsed = false;
+    let pourAnim = null;
+
+    function seededRandom(seed) {
+      let x = Math.sin(seed * 9999) * 10000;
+      return x - Math.floor(x);
+    }
+
+    function generateLevelData(level) {
+      if (level === 1) {
+        return [
+          ['red', 'blue', 'red', 'blue'],
+          ['blue', 'red', 'blue', 'red'],
+          []
+        ];
+      }
+      if (level === 2) {
+        return [
+          ['red', 'green', 'blue', 'red'],
+          ['blue', 'red', 'green', 'blue'],
+          ['green', 'blue', 'red', 'green'],
+          [],
+          []
+        ];
+      }
+
+      const numColors = Math.min(2 + Math.floor((level + 1) / 2), COLOR_KEYS.length);
+      const emptyCount = 2;
+      let pool = [];
+
+      for (let c = 0; c < numColors; c++) {
+        for (let k = 0; k < CAPACITY; k++) {
+          pool.push(COLOR_KEYS[c]);
+        }
+      }
+
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(seededRandom(level * 100 + i) * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+
+      let res = [];
+      for (let b = 0; b < numColors; b++) {
+        res.push(pool.slice(b * CAPACITY, (b + 1) * CAPACITY));
+      }
+      for (let e = 0; e < emptyCount; e++) {
+        res.push([]);
+      }
+
+      if (res.every(b => isLayersComplete(b) || b.length === 0)) {
+        [res[0][0], res[1][0]] = [res[1][0], res[0][0]];
+      }
+      return res;
+    }
+
+    function isLayersComplete(layers) {
+      return layers.length === CAPACITY && layers.every(c => c === layers[0]);
+    }
+
+    function checkWin() {
+      return bottles.every(b => b.layers.length === 0 || isLayersComplete(b.layers));
+    }
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let W = 360, H = 480;
+    let bottleW = 58, bottleH = 165, neckW = 24, neckH = 26;
+
+    function resizeCanvas() {
+      const box = document.getElementById('arenaBox');
+      const dpr = window.devicePixelRatio || 1;
+      W = box.clientWidth;
+      H = box.clientHeight;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      computeBottleHomePositions();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    function computeBottleHomePositions() {
+      const count = bottles.length;
+      if (count === 0) return;
+
+      const cols = count <= 4 ? count : Math.ceil(count / 2);
+      const rows = count <= 4 ? 1 : 2;
+
+      bottleW = Math.min(58, Math.floor((W - 36) / cols) - 14);
+      bottleW = Math.max(44, bottleW);
+      bottleH = Math.round(bottleW * 2.75);
+      neckW = Math.round(bottleW * 0.42);
+      neckH = Math.round(bottleW * 0.44);
+
+      const gapX = Math.min(26, (W - cols * bottleW) / (cols + 1));
+      const rowGapY = rows === 1 ? 0 : Math.min(34, (H - rows * (bottleH + neckH)) / 3);
+
+      const totalGridH = rows * (bottleH + neckH) + (rows - 1) * rowGapY;
+      const startY = Math.max(70, (H - totalGridH) / 2 + neckH + 15);
+
+      bottles.forEach((b, i) => {
+        const r = Math.floor(i / cols);
+        const itemsInThisRow = (r === rows - 1 && count % cols !== 0) ? (count % cols) : cols;
+        const c = i % cols;
+
+        const rowW = itemsInThisRow * bottleW + (itemsInThisRow - 1) * gapX;
+        const startX = (W - rowW) / 2 + bottleW / 2;
+
+        b.homeX = startX + c * (bottleW + gapX);
+        b.homeY = startY + r * (bottleH + neckH + rowGapY);
+
+        if (!pourAnim || (pourAnim.fromIdx !== i && pourAnim.toIdx !== i)) {
+          b.targetX = b.homeX;
+          b.targetY = (selectedIndex === i) ? b.homeY - 24 : b.homeY;
+          b.targetAngle = 0;
+        }
+      });
+    }
+
+    function loadLevel(level) {
+      currentLevel = Math.max(1, level);
+      localStorage.setItem('aa_liquid_level', currentLevel);
+
+      const rawData = generateLevelData(currentLevel);
+      bottles = rawData.map((layers, idx) => ({
+        layers: [...layers],
+        homeX: 0, homeY: 0,
+        x: 0, y: 0,
+        targetX: 0, targetY: 0,
+        angle: 0, targetAngle: 0,
+        wavePhase: idx * 1.3,
+        waveAmp: 1.8,
+        capProgress: isLayersComplete(layers) ? 1 : 0
+      }));
+
+      history = [];
+      moves = 0;
+      selectedIndex = -1;
+      pourAnim = null;
+      extraBottleUsed = false;
+
+      document.getElementById('levelDisplay').innerText = `Level: ${currentLevel}`;
+      document.getElementById('movesDisplay').innerText = `Moves: 0`;
+      document.getElementById('winBanner').innerText = '';
+      document.getElementById('extraBottleBtn').disabled = false;
+      document.getElementById('undoBtn').disabled = true;
+
+      const nextBtn = document.getElementById('nextBtn');
+      nextBtn.disabled = true;
+      nextBtn.className = 'btn';
+
+      resizeCanvas();
+      bottles.forEach(b => {
+        b.x = b.homeX;
+        b.y = b.homeY;
+      });
+    }
+
+    canvas.addEventListener('pointerdown', (e) => {
+      if (pourAnim || checkWin()) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+
+      let clickedIdx = -1;
+      bottles.forEach((b, idx) => {
+        if (
+          Math.abs(clickX - b.x) <= bottleW * 0.65 &&
+          clickY >= b.y - neckH - 15 &&
+          clickY <= b.y + bottleH + 15
+        ) {
+          clickedIdx = idx;
+        }
+      });
+
+      if (clickedIdx === -1) {
+        selectedIndex = -1;
+        computeBottleHomePositions();
+        return;
+      }
+
+      if (selectedIndex === -1) {
+        if (bottles[clickedIdx].layers.length === 0 || isLayersComplete(bottles[clickedIdx].layers)) {
+          playBubbleSound(220);
+          return;
+        }
+        selectedIndex = clickedIdx;
+        bottles[clickedIdx].waveAmp = 5.5;
+        playBubbleSound(520);
+        computeBottleHomePositions();
+        return;
+      }
+
+      if (selectedIndex === clickedIdx) {
+        selectedIndex = -1;
+        playBubbleSound(380);
+        computeBottleHomePositions();
+        return;
+      }
+
+      if (canPour(selectedIndex, clickedIdx)) {
+        startPourAnimation(selectedIndex, clickedIdx);
+      } else {
+        if (bottles[clickedIdx].layers.length > 0 && !isLayersComplete(bottles[clickedIdx].layers)) {
+          selectedIndex = clickedIdx;
+          bottles[clickedIdx].waveAmp = 5.5;
+          playBubbleSound(520);
+        } else {
+          selectedIndex = -1;
+          playBubbleSound(220);
+        }
+        computeBottleHomePositions();
+      }
+    });
+
+    function canPour(fromIdx, toIdx) {
+      if (fromIdx === toIdx) return false;
+      const src = bottles[fromIdx].layers;
+      const dst = bottles[toIdx].layers;
+      if (src.length === 0 || dst.length >= CAPACITY) return false;
+      if (dst.length === 0) return true;
+      return src[src.length - 1] === dst[dst.length - 1];
+    }
+
+    function startPourAnimation(fromIdx, toIdx) {
+      const src = bottles[fromIdx];
+      const dst = bottles[toIdx];
+      const colorToMove = src.layers[src.length - 1];
+
+      let countToMove = 0;
+      for (let i = src.layers.length - 1; i >= 0; i--) {
+        if (src.layers[i] === colorToMove && dst.layers.length + countToMove < CAPACITY) {
+          countToMove++;
+        } else {
+          break;
+        }
+      }
+
+      history.push({
+        state: bottles.map(b => [...b.layers]),
+        moves: moves
+      });
+
+      const pourRight = dst.homeX >= src.homeX;
+      const tiltAngle = pourRight ? (Math.PI * 0.44) : (-Math.PI * 0.44);
+
+      const tipOffsetX = Math.sin(tiltAngle) * neckH;
+      const tipOffsetY = -Math.cos(tiltAngle) * neckH;
+
+      const desiredTipX = dst.homeX + (pourRight ? -6 : 6);
+      const desiredTipY = dst.homeY - neckH - 20;
+
+      src.targetX = desiredTipX - tipOffsetX;
+      src.targetY = desiredTipY - tipOffsetY;
+      src.targetAngle = tiltAngle;
+
+      selectedIndex = -1;
+
+      pourAnim = {
+        fromIdx,
+        toIdx,
+        color: colorToMove,
+        count: countToMove,
+        srcStartCount: src.layers.length,
+        dstStartCount: dst.layers.length,
+        progress: 0,
+        phase: 'moving',
+        soundPlayed: false
+      };
+    }
+
+    function traceBottlePath(ctx, bw, bh, nw, nh) {
+      const r = 16;
+      const shoulderY = 18;
+      ctx.beginPath();
+      ctx.moveTo(-nw / 2, -nh);
+      ctx.lineTo(-nw / 2, 0);
+      ctx.quadraticCurveTo(-bw / 2, 2, -bw / 2, shoulderY);
+      ctx.lineTo(-bw / 2, bh - r);
+      ctx.quadraticCurveTo(-bw / 2, bh, -bw / 2 + r, bh);
+      ctx.lineTo(bw / 2 - r, bh);
+      ctx.quadraticCurveTo(bw / 2, bh, bw / 2, bh - r);
+      ctx.lineTo(bw / 2, shoulderY);
+      ctx.quadraticCurveTo(bw / 2, 2, nw / 2, 0);
+      ctx.lineTo(nw / 2, -nh);
+      ctx.closePath();
+    }
+
+    function drawBottleWithRealWater(b, index, time) {
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.rotate(b.angle);
+
+      ctx.save();
+      traceBottlePath(ctx, bottleW - 4, bottleH - 2, neckW - 3, neckH);
+      ctx.clip();
+
+      const liquidHeightArea = bottleH - 16;
+      const unitH = liquidHeightArea / CAPACITY;
+
+      let renderLayers = [];
+
+      if (pourAnim && pourAnim.phase === 'pouring') {
+        if (pourAnim.fromIdx === index) {
+          const removed = pourAnim.count * pourAnim.progress;
+          const remainingTotal = Math.max(0, pourAnim.srcStartCount - removed);
+          for (let i = 0; i < pourAnim.srcStartCount; i++) {
+            const amt = Math.max(0, Math.min(1, remainingTotal - i));
+            if (amt > 0.01) {
+              renderLayers.push({ color: b.layers[i], amount: amt });
+            }
+          }
+        } else if (pourAnim.toIdx === index) {
+          for (let i = 0; i < pourAnim.dstStartCount; i++) {
+            renderLayers.push({ color: b.layers[i], amount: 1 });
+          }
+          const addedTotal = pourAnim.count * pourAnim.progress;
+          let remAdd = addedTotal;
+          while (remAdd > 0.01) {
+            const amt = Math.min(1, remAdd);
+            renderLayers.push({ color: pourAnim.color, amount: amt });
+            remAdd -= amt;
+          }
+        } else {
+          b.layers.forEach(c => renderLayers.push({ color: c, amount: 1 }));
+        }
+      } else {
+        b.layers.forEach(c => renderLayers.push({ color: c, amount: 1 }));
+      }
+
+      let currentBottomY = bottleH;
+      renderLayers.forEach((layer, lIdx) => {
+        const layerH = layer.amount * unitH;
+        const topY = currentBottomY - layerH;
+        const isTopLayer = (lIdx === renderLayers.length - 1);
+        const palette = WATER_COLORS[layer.color] || WATER_COLORS.blue;
+
+        ctx.save();
+        const centerY = (currentBottomY + topY) / 2;
+        ctx.translate(0, centerY);
+        ctx.rotate(-b.angle * 0.85);
+        ctx.translate(0, -centerY);
+
+        const grad = ctx.createLinearGradient(0, topY, 0, currentBottomY + 15);
+        grad.addColorStop(0, palette.light);
+        grad.addColorStop(0.25, palette.main);
+        grad.addColorStop(1, palette.dark);
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+
+        const span = bottleH * 1.2;
+        ctx.moveTo(-span, currentBottomY + 40);
+        ctx.lineTo(-span, topY);
+
+        const amp = isTopLayer ? b.waveAmp : 1.0;
+        for (let wx = -span; wx <= span; wx += 8) {
+          const waveY = topY + Math.sin(wx * 0.09 + time * 5 + b.wavePhase + lIdx) * amp;
+          ctx.lineTo(wx, waveY);
+        }
+
+        ctx.lineTo(span, currentBottomY + 40);
+        ctx.closePath();
+        ctx.fill();
+
+        if (isTopLayer) {
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+
+        ctx.restore();
+        currentBottomY = topY;
+      });
+
+      ctx.restore();
+
+      traceBottlePath(ctx, bottleW, bottleH, neckW, neckH);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.82)';
+      ctx.lineWidth = 2.6;
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(-neckW / 2 - 3, -neckH - 3, neckW + 6, 5, 3);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+      ctx.lineWidth = 3.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-bottleW / 2 + 8, 26);
+      ctx.lineTo(-bottleW / 2 + 8, bottleH - 22);
+      ctx.stroke();
+
+      if (b.capProgress > 0.01) {
+        ctx.save();
+        const capY = -neckH - 10 + (1 - b.capProgress) * -15;
+        ctx.globalAlpha = b.capProgress;
+        const capGrad = ctx.createLinearGradient(-neckW / 2, capY, neckW / 2, capY);
+        capGrad.addColorStop(0, '#b45309');
+        capGrad.addColorStop(0.5, '#fbbf24');
+        capGrad.addColorStop(1, '#b45309');
+        ctx.fillStyle = capGrad;
+        ctx.beginPath();
+        ctx.roundRect(-neckW / 2 - 2, capY, neckW + 4, 9, 3);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.rotate(-b.angle);
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '600 13px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(index + 1, 0, bottleH + 20);
+
+      ctx.restore();
+    }
+
+    function drawPouringStream(time) {
+      if (!pourAnim || pourAnim.phase !== 'pouring') return;
+
+      const src = bottles[pourAnim.fromIdx];
+      const dst = bottles[pourAnim.toIdx];
+      const palette = WATER_COLORS[pourAnim.color] || WATER_COLORS.blue;
+
+      const spoutX = src.x + Math.sin(src.angle) * neckH;
+      const spoutY = src.y - Math.cos(src.angle) * neckH;
+
+      const filledUnits = pourAnim.dstStartCount + pourAnim.count * pourAnim.progress;
+      const waterSurfaceY = dst.y + bottleH - (filledUnits / CAPACITY) * (bottleH - 16);
+
+      ctx.save();
+      const streamGrad = ctx.createLinearGradient(spoutX, spoutY, dst.x, waterSurfaceY);
+      streamGrad.addColorStop(0, palette.light);
+      streamGrad.addColorStop(0.5, palette.main);
+      streamGrad.addColorStop(1, palette.light);
+
+      ctx.strokeStyle = streamGrad;
+      ctx.lineWidth = 6.5;
+      ctx.lineCap = 'round';
+
+      ctx.beginPath();
+      ctx.moveTo(spoutX, spoutY);
+      ctx.lineTo(dst.x, dst.y - neckH + 4);
+      ctx.lineTo(dst.x, waterSurfaceY);
+      ctx.stroke();
+
+      ctx.fillStyle = palette.light;
+      for (let i = 0; i < 3; i++) {
+        const bx = dst.x + Math.sin(time * 18 + i * 2) * 7;
+        const by = waterSurfaceY - Math.abs(Math.cos(time * 15 + i)) * 7;
+        ctx.beginPath();
+        ctx.arc(bx, by, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    let lastTime = performance.now();
+
+    function gameLoop(now) {
+      const dt = Math.min(0.05, (now - lastTime) / 1000);
+      lastTime = now;
+      const time = now / 1000;
+
+      bottles.forEach(b => {
+        b.x += (b.targetX - b.x) * 14 * dt;
+        b.y += (b.targetY - b.y) * 14 * dt;
+        b.angle += (b.targetAngle - b.angle) * 14 * dt;
+
+        b.waveAmp += (1.6 - b.waveAmp) * 3 * dt;
+
+        const targetCap = (!pourAnim && isLayersComplete(b.layers)) ? 1 : 0;
+        b.capProgress += (targetCap - b.capProgress) * 10 * dt;
+      });
+
+      if (pourAnim) {
+        const src = bottles[pourAnim.fromIdx];
+        const dst = bottles[pourAnim.toIdx];
+
+        if (pourAnim.phase === 'moving') {
+          if (Math.abs(src.x - src.targetX) < 3 && Math.abs(src.y - src.targetY) < 3 && Math.abs(src.angle - src.targetAngle) < 0.05) {
+            pourAnim.phase = 'pouring';
+            if (!pourAnim.soundPlayed) {
+              pourAnim.soundPlayed = true;
+              playPourWaterSound(0.6);
+            }
+          }
+        } else if (pourAnim.phase === 'pouring') {
+          pourAnim.progress += dt * 1.65;
+          src.waveAmp = 4.2;
+          dst.waveAmp = 6.5;
+
+          if (pourAnim.progress >= 1) {
+            pourAnim.progress = 1;
+            for (let k = 0; k < pourAnim.count; k++) {
+              dst.layers.push(src.layers.pop());
+            }
+            src.targetX = src.homeX;
+            src.targetY = src.homeY;
+            src.targetAngle = 0;
+            pourAnim.phase = 'returning';
+          }
+        } else if (pourAnim.phase === 'returning') {
+          if (Math.abs(src.x - src.homeX) < 2 && Math.abs(src.y - src.homeY) < 2 && Math.abs(src.angle) < 0.04) {
+            src.x = src.homeX;
+            src.y = src.homeY;
+            src.angle = 0;
+            pourAnim = null;
+
+            moves++;
+            document.getElementById('movesDisplay').innerText = `Moves: ${moves}`;
+            document.getElementById('undoBtn').disabled = history.length === 0;
+
+            if (checkWin()) {
+              playWinSound();
+              const totalSaved = parseInt(localStorage.getItem('aa_coins')) || 0;
+              localStorage.setItem('aa_coins', totalSaved + 20);
+              document.getElementById('winBanner').innerText = `🎉 Level ${currentLevel} પૂર્ણ થયું! (+20 Coins)`;
+              const nextBtn = document.getElementById('nextBtn');
+              nextBtn.disabled = false;
+              nextBtn.className = 'btn btn-success';
+              AdManager.onLevelComplete();
+            }
+          }
+        }
+      }
+
+      ctx.clearRect(0, 0, W, H);
+
+      bottles.forEach((b, idx) => {
+        if (!pourAnim || pourAnim.fromIdx !== idx) {
+          drawBottleWithRealWater(b, idx, time);
+        }
+      });
+
+      drawPouringStream(time);
+
+      if (pourAnim) {
+        drawBottleWithRealWater(bottles[pourAnim.fromIdx], pourAnim.fromIdx, time);
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function undoMove() {
+      if (pourAnim || history.length === 0 || checkWin()) return;
+      const last = history.pop();
+      bottles.forEach((b, i) => {
+        b.layers = [...last.state[i]];
+        b.waveAmp = 4.5;
+      });
+      moves = last.moves;
+      selectedIndex = -1;
+      document.getElementById('movesDisplay').innerText = `Moves: ${moves}`;
+      document.getElementById('undoBtn').disabled = history.length === 0;
+      computeBottleHomePositions();
+    }
+
+    function restartLevel() {
+      if (pourAnim) return;
+      loadLevel(currentLevel);
+    }
+
+    function nextLevel() {
+      if (pourAnim) return;
+      loadLevel(currentLevel + 1);
+    }
+
+    function prevLevel() {
+      if (pourAnim || currentLevel <= 1) return;
+      loadLevel(currentLevel - 1);
+    }
+
+    function addExtraBottle() {
+      if (pourAnim || extraBottleUsed || checkWin()) return;
+      AdManager.showRewardedAd(() => {
+        extraBottleUsed = true;
+        bottles.push({
+          layers: [],
+          homeX: 0, homeY: 0, x: W / 2, y: H / 2,
+          targetX: 0, targetY: 0, angle: 0, targetAngle: 0,
+          wavePhase: 0, waveAmp: 1.6, capProgress: 0
+        });
+        document.getElementById('extraBottleBtn').disabled = true;
+        playBubbleSound(600);
+        computeBottleHomePositions();
+      });
+    }
+
+    function goHome() {
+      window.location.href = 'index.html';
+    }
+
+    loadLevel(currentLevel);
+    requestAnimationFrame(loop => gameLoop(loop));
+  </script>
+</body>
+</html>

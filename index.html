@@ -1,0 +1,889 @@
+
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#101326">
+<title>A&AGame - Bottle Colour</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;
+ background:radial-gradient(circle at top,#26345c,#101326 65%);
+ color:white;
+ font-family:Arial,sans-serif;
+ min-height:100vh;
+ padding-bottom:25px;
+}
+header{
+ padding:16px;
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ background:#151c35;
+ border-bottom:1px solid #ffffff20;
+}
+.logo{font-size:21px;font-weight:bold}
+button{
+ border:0;
+ border-radius:12px;
+ padding:12px 16px;
+ color:white;
+ background:#5968ef;
+ font-size:15px;
+ font-weight:bold;
+ cursor:pointer;
+}
+button:active{transform:scale(.96)}
+button:disabled{opacity:.45}
+.screen{display:none;padding:16px}
+.screen.active{display:block}
+.menu-title{text-align:center;margin:25px 0}
+.menu-title h1{font-size:30px;margin-bottom:8px}
+.menu-grid{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:13px;
+ max-width:520px;
+ margin:auto;
+}
+.game-tile{
+ min-height:125px;
+ border-radius:20px;
+ background:linear-gradient(145deg,#29365f,#1a2343);
+ border:1px solid #ffffff20;
+ display:flex;
+ flex-direction:column;
+ align-items:center;
+ justify-content:center;
+ gap:9px;
+ font-size:17px;
+ font-weight:bold;
+ cursor:pointer;
+}
+.game-tile span{font-size:38px}
+.game-tile:active{transform:scale(.97)}
+.topbar{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:8px;
+ flex-wrap:wrap;
+}
+.topbar button{padding:10px 13px}
+.stats{
+ display:flex;
+ justify-content:center;
+ gap:12px;
+ margin:16px 0;
+ flex-wrap:wrap;
+}
+.stat{
+ background:#202a4b;
+ padding:10px 17px;
+ border-radius:12px;
+ color:#dce4ff;
+}
+#message{
+ text-align:center;
+ min-height:28px;
+ color:#ffe28b;
+ font-weight:bold;
+ margin:12px 0;
+}
+#bottles{
+ display:flex;
+ flex-wrap:wrap;
+ justify-content:center;
+ align-items:flex-end;
+ gap:17px 12px;
+ max-width:600px;
+ margin:28px auto 20px;
+ padding:20px 8px 10px;
+ min-height:260px;
+ position:relative;
+}
+.bottle{
+ width:82px;
+ height:174px;
+ position:relative;
+ cursor:pointer;
+ flex:0 0 82px;
+ transition:transform .18s ease,filter .18s ease;
+ transform-origin:50% 95%;
+}
+.bottle.selected{
+ transform:translateY(-13px);
+ filter:drop-shadow(0 0 12px #ffe16a);
+}
+.bottle:active{filter:brightness(1.15)}
+.glass-body{
+ position:absolute;
+ left:2px;
+ bottom:0;
+ width:78px;
+ height:128px;
+ border:3px solid rgba(218,239,255,.8);
+ border-top:2px solid rgba(255,255,255,.8);
+ border-radius:27px 27px 19px 19px;
+ background:linear-gradient(90deg,
+  rgba(255,255,255,.18),
+  rgba(255,255,255,.035) 28%,
+  rgba(255,255,255,.12) 75%,
+  rgba(255,255,255,.25));
+ box-shadow:
+ inset 5px 0 8px #ffffff20,
+ inset -5px 0 8px #ffffff16,
+ 0 5px 12px #0005;
+ overflow:hidden;
+}
+.neck{
+ position:absolute;
+ top:14px;
+ left:25px;
+ width:32px;
+ height:37px;
+ border-left:3px solid #d8edffbb;
+ border-right:3px solid #d8edffbb;
+ background:linear-gradient(90deg,#ffffff20,#ffffff05,#ffffff25);
+ z-index:2;
+}
+.mouth{
+ position:absolute;
+ top:9px;
+ left:23px;
+ width:36px;
+ height:10px;
+ border:3px solid #dcefff;
+ border-radius:50%;
+ background:#15213b;
+ z-index:3;
+ box-shadow:0 0 5px #fff6;
+}
+.liquid-area{
+ position:absolute;
+ left:5px;
+ right:5px;
+ top:48px;
+ bottom:5px;
+ overflow:hidden;
+ border-radius:13px 13px 14px 14px;
+ z-index:1;
+}
+.layer{
+ position:absolute;
+ left:0;
+ width:100%;
+ height:25%;
+ border-top:1px solid #ffffff70;
+ box-shadow:inset 0 4px 5px #ffffff30;
+ border-radius:5px 5px 9px 9px;
+}
+.glass-shine{
+ position:absolute;
+ left:10px;
+ top:61px;
+ width:6px;
+ height:80px;
+ border-radius:10px;
+ background:linear-gradient(transparent,#ffffff9c,transparent);
+ z-index:4;
+ opacity:.7;
+ pointer-events:none;
+}
+.glass-shine-two{
+ position:absolute;
+ right:10px;
+ top:76px;
+ width:3px;
+ height:55px;
+ border-radius:10px;
+ background:#ffffff70;
+ z-index:4;
+ pointer-events:none;
+}
+.cap{
+ position:absolute;
+ top:0;
+ left:23px;
+ width:36px;
+ height:13px;
+ border-radius:5px 5px 3px 3px;
+ background:linear-gradient(#ffe89b,#b9802e);
+ border:1px solid #fff2b0;
+ z-index:5;
+ box-shadow:0 2px 4px #0008;
+}
+.bottle-number{
+ position:absolute;
+ bottom:-22px;
+ width:100%;
+ text-align:center;
+ font-size:11px;
+ color:#aebde6;
+}
+.bottle.full .glass-body{
+ box-shadow:0 0 13px #ffd96c55,inset 5px 0 8px #ffffff20;
+}
+.floating-bottle{
+ position:fixed!important;
+ left:0;
+ top:0;
+ z-index:10000;
+ margin:0!important;
+ flex:none!important;
+ cursor:default!important;
+ pointer-events:none;
+ transition:transform .65s cubic-bezier(.2,.8,.2,1);
+ transform-origin:50% 95%;
+}
+#pour-stream{
+ position:fixed;
+ z-index:9999;
+ height:8px;
+ border-radius:100%;
+ pointer-events:none;
+ opacity:0;
+ transform-origin:0 50%;
+ background:linear-gradient(to bottom,#fff8a8,#ffe23d,#ffae21);
+ box-shadow:0 0 7px #ffe45b,0 0 14px #ffb52e;
+}
+#pour-stream.show{
+ opacity:1;
+ animation:waterFlow .18s linear infinite alternate;
+}
+@keyframes waterFlow{
+ from{filter:brightness(.9)}
+ to{filter:brightness(1.4)}
+}
+.pour-fill{
+ position:absolute;
+ left:0;
+ width:100%;
+ height:25%;
+ border-top:1px solid #ffffff80;
+ border-radius:5px 5px 9px 9px;
+ transform:scaleY(0);
+ transform-origin:bottom;
+ transition:transform .85s linear;
+ box-shadow:inset 0 4px 5px #ffffff30;
+}
+.controls{
+ display:flex;
+ justify-content:center;
+ gap:10px;
+ flex-wrap:wrap;
+ margin:18px auto;
+}
+.controls button{min-width:105px}
+.help{
+ max-width:520px;
+ margin:20px auto;
+ padding:14px;
+ border-radius:14px;
+ background:#202a4b;
+ color:#dce4ff;
+ line-height:1.6;
+ font-size:14px;
+}
+#winPanel{
+ display:none;
+ max-width:400px;
+ margin:20px auto;
+ text-align:center;
+ padding:20px;
+ border-radius:18px;
+ background:#26375a;
+ border:1px solid #ffe28b66;
+}
+#winPanel h2{color:#ffe28b}
+@media(max-width:380px){
+ #bottles{gap:17px 8px}
+ .bottle{transform-origin:50% 95%}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+ <div class="logo">🎮 A&AGame</div>
+ <button onclick="goHome()">🏠 Home</button>
+</header>
+
+<section id="homeScreen" class="screen active">
+ <div class="menu-title">
+  <h1>🎮 A&AGame</h1>
+  <p>તમારી ગેમ રમો અને મજા કરો!</p>
+ </div>
+
+ <div class="menu-grid">
+  <div class="game-tile" onclick="comingSoon('Car Speed')">
+   <span>🏎️</span>Car Speed
+  </div>
+  <div class="game-tile" onclick="comingSoon('Bike Speed')">
+   <span>🏍️</span>Bike Speed
+  </div>
+  <div class="game-tile" onclick="comingSoon('Ludo')">
+   <span>🎲</span>Ludo
+  </div>
+  <div class="game-tile" onclick="comingSoon('Carrom')">
+   <span>🎯</span>Carrom
+  </div>
+  <div class="game-tile" onclick="startGame()">
+   <span>🧪</span>Bottle Colour
+  </div>
+  <div class="game-tile" onclick="comingSoon('Arrow Puzzle')">
+   <span>🏹</span>Arrow Puzzle
+  </div>
+  <div class="game-tile" onclick="comingSoon('K.H Fruits Business')">
+   <span>🍎</span>K.H Fruits Business
+  </div>
+  <div class="game-tile" onclick="comingSoon('Puzzle Game')">
+   <span>🧩</span>Puzzle Game
+  </div>
+ </div>
+</section>
+
+<section id="gameScreen" class="screen">
+ <div class="topbar">
+  <button onclick="goHome()">⬅ પાછા</button>
+  <strong>🧪 Bottle Colour</strong>
+  <button onclick="toggleSound()" id="soundBtn">🔊 Sound ON</button>
+ </div>
+
+ <div class="stats">
+  <div class="stat">Level: <b id="levelText">1</b></div>
+  <div class="stat">Moves: <b id="movesText">0</b></div>
+ </div>
+
+ <div id="message">એક બોટલમાંથી બીજી બોટલમાં રંગ રેડો.</div>
+
+ <div id="bottles"></div>
+
+ <div class="controls">
+  <button onclick="restartLevel()">🔄 Restart</button>
+  <button onclick="undoMove()">↩ Undo</button>
+  <button onclick="nextLevel()" id="nextBtn" disabled>આગળ ➜</button>
+ </div>
+
+ <div id="winPanel">
+  <h2>🎉 Level Complete!</h2>
+  <p>ખૂબ સરસ! તમે લેવલ પૂરું કર્યું.</p>
+  <button onclick="nextLevel()">આગળનું લેવલ ➜</button>
+ </div>
+
+ <div class="help">
+  <b>રમવાની રીત:</b><br>
+  1. બોટલ પર ટચ કરો.<br>
+  2. બીજી બોટલ પર ટચ કરો.<br>
+  3. બોટલ ઊંચકાઈને બીજી બોટલ પાસે જશે અને રંગ રેડશે.<br>
+  4. દરેક બોટલમાં એક જ રંગના 4 લેયર ભેગા કરો.<br>
+  5. ખાલી બોટલમાં પણ રંગ રેડી શકો છો.
+ </div>
+</section>
+
+<script>
+const COLORS=[
+ "#f44336","#2196f3","#ffca28","#4caf50",
+ "#ab47bc","#ff7043","#26c6da","#ec407a",
+ "#8d6e63","#9ccc65"
+];
+
+let levelNumber=1;
+let unlockedLevel=1;
+let bottles=[];
+let startLayout=[];
+let selected=-1;
+let moves=0;
+let won=false;
+let busy=false;
+let soundOn=true;
+let audioContext=null;
+let history=[];
+
+try{
+ unlockedLevel=Math.max(1,Math.min(100,
+  Number(localStorage.getItem("aaBottleUnlocked"))||1
+ ));
+}catch(e){unlockedLevel=1}
+
+function sleep(ms){
+ return new Promise(resolve=>setTimeout(resolve,ms));
+}
+
+function playTone(freq,duration,type="sine",volume=.08){
+ if(!soundOn)return;
+ try{
+  audioContext=audioContext||new (window.AudioContext||window.webkitAudioContext)();
+  if(audioContext.state==="suspended")audioContext.resume();
+  const osc=audioContext.createOscillator();
+  const gain=audioContext.createGain();
+  osc.type=type;
+  osc.frequency.setValueAtTime(freq,audioContext.currentTime);
+  gain.gain.setValueAtTime(volume,audioContext.currentTime);
+  gain.gain.exponentialRampToValueAtTime(.001,audioContext.currentTime+duration);
+  osc.connect(gain);
+  gain.connect(audioContext.destination);
+  osc.start();
+  osc.stop(audioContext.currentTime+duration);
+ }catch(e){}
+}
+
+function playPourSound(){
+ if(!soundOn)return;
+ try{
+  audioContext=audioContext||new (window.AudioContext||window.webkitAudioContext)();
+  if(audioContext.state==="suspended")audioContext.resume();
+
+  const duration=.9;
+  const buffer=audioContext.createBuffer(
+   1,Math.floor(audioContext.sampleRate*duration),audioContext.sampleRate
+  );
+  const data=buffer.getChannelData(0);
+
+  for(let i=0;i<data.length;i++){
+   data[i]=(Math.random()*2-1)*.16;
+  }
+
+  const source=audioContext.createBufferSource();
+  const filter=audioContext.createBiquadFilter();
+  const gain=audioContext.createGain();
+
+  source.buffer=buffer;
+  filter.type="lowpass";
+  filter.frequency.value=1100;
+  gain.gain.setValueAtTime(.001,audioContext.currentTime);
+  gain.gain.linearRampToValueAtTime(.12,audioContext.currentTime+.12);
+  gain.gain.setValueAtTime(.12,audioContext.currentTime+.65);
+  gain.gain.linearRampToValueAtTime(.001,audioContext.currentTime+.9);
+
+  source.connect(filter);
+  filter.connect(gain);
+  gain.connect(audioContext.destination);
+  source.start();
+  source.stop(audioContext.currentTime+.9);
+ }catch(e){}
+}
+
+function playWinSound(){
+ playTone(523,.2);
+ setTimeout(()=>playTone(659,.2),180);
+ setTimeout(()=>playTone(784,.35),360);
+}
+
+function toggleSound(){
+ soundOn=!soundOn;
+ document.getElementById("soundBtn").textContent=
+  soundOn?"🔊 Sound ON":"🔇 Sound OFF";
+ if(soundOn)playTone(600,.1);
+}
+
+function showScreen(id){
+ document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+ document.getElementById(id).classList.add("active");
+}
+
+function goHome(){
+ busy=false;
+ selected=-1;
+ showScreen("homeScreen");
+}
+
+function comingSoon(name){
+ alert(name+" ગેમ હજી તૈયાર થઈ રહી છે.");
+}
+
+function startGame(){
+ showScreen("gameScreen");
+ loadLevel(levelNumber);
+}
+
+function makePuzzle(level){
+ const colorCount=Math.min(2+Math.floor((level-1)/5),8);
+ let arr=[];
+
+ for(let c=0;c<colorCount;c++){
+  arr.push([c,c,c,c]);
+ }
+ arr.push([]);
+ arr.push([]);
+
+ let previous=null;
+ const scrambleCount=Math.min(18+level*2,100);
+
+ for(let i=0;i<scrambleCount;i++){
+  let possible=[];
+
+  for(let from=0;from<arr.length;from++){
+   if(arr[from].length===0)continue;
+
+   for(let to=0;to<arr.length;to++){
+    if(from===to)continue;
+    if(arr[to].length>=4)continue;
+
+    if(arr[to].length>0 &&
+       arr[to][arr[to].length-1]!==arr[from][arr[from].length-1]){
+      continue;
+    }
+
+    if(previous && previous.from===to && previous.to===from)continue;
+    possible.push({from,to});
+   }
+  }
+
+  if(!possible.length)break;
+
+  const move=possible[Math.floor(Math.random()*possible.length)];
+  const color=arr[move.from].pop();
+  arr[move.to].push(color);
+  previous=move;
+ }
+
+ return arr;
+}
+
+function copyLayout(arr){
+ return arr.map(b=>b.slice());
+}
+
+function loadLevel(level){
+ levelNumber=Math.max(1,Math.min(100,level));
+ bottles=makePuzzle(levelNumber);
+ startLayout=copyLayout(bottles);
+ selected=-1;
+ moves=0;
+ won=false;
+ busy=false;
+ history=[];
+ document.getElementById("winPanel").style.display="none";
+ document.getElementById("nextBtn").disabled=true;
+ updateStats();
+ render();
+ document.getElementById("message").textContent=
+  "એક બોટલ પસંદ કરો, પછી બીજી બોટલ પસંદ કરો.";
+}
+
+function updateStats(){
+ document.getElementById("levelText").textContent=levelNumber;
+ document.getElementById("movesText").textContent=moves;
+}
+
+function render(){
+ const area=document.getElementById("bottles");
+ area.innerHTML="";
+
+ bottles.forEach((layers,index)=>{
+  const bottle=document.createElement("div");
+  bottle.className="bottle";
+  if(index===selected)bottle.classList.add("selected");
+  if(layers.length===4)bottle.classList.add("full");
+
+  bottle.dataset.index=index;
+
+  const neck=document.createElement("div");
+  neck.className="neck";
+
+  const mouth=document.createElement("div");
+  mouth.className="mouth";
+
+  const body=document.createElement("div");
+  body.className="glass-body";
+
+  const liquid=document.createElement("div");
+  liquid.className="liquid-area";
+
+  layers.forEach((color,layerIndex)=>{
+   const layer=document.createElement("div");
+   layer.className="layer";
+   layer.style.background=
+    `linear-gradient(90deg,${shade(color,-20)},${COLORS[color]},${shade(color,20)})`;
+   layer.style.bottom=(layerIndex*25)+"%";
+   liquid.appendChild(layer);
+  });
+
+  body.appendChild(liquid);
+
+  const shine=document.createElement("div");
+  shine.className="glass-shine";
+
+  const shine2=document.createElement("div");
+  shine2.className="glass-shine-two";
+
+  bottle.appendChild(neck);
+  bottle.appendChild(mouth);
+  bottle.appendChild(body);
+  bottle.appendChild(shine);
+  bottle.appendChild(shine2);
+
+  if(layers.length===4){
+   const cap=document.createElement("div");
+   cap.className="cap";
+   bottle.appendChild(cap);
+  }
+
+  const number=document.createElement("div");
+  number.className="bottle-number";
+  number.textContent=index+1;
+  bottle.appendChild(number);
+
+  bottle.addEventListener("click",()=>tapBottle(index));
+  area.appendChild(bottle);
+ });
+}
+
+function shade(hex,percent){
+ let n=parseInt(hex.slice(1),16);
+ let r=(n>>16)+percent;
+ let g=((n>>8)&255)+percent;
+ let b=(n&255)+percent;
+ r=Math.max(0,Math.min(255,r));
+ g=Math.max(0,Math.min(255,g));
+ b=Math.max(0,Math.min(255,b));
+ return "#"+(1<<24|r<<16|g<<8|b).toString(16).slice(1);
+}
+
+function canPour(from,to){
+ if(from===to)return false;
+ if(!bottles[from]||!bottles[to])return false;
+ if(bottles[from].length===0)return false;
+ if(bottles[to].length>=4)return false;
+
+ if(bottles[to].length===0)return true;
+
+ return bottles[from][bottles[from].length-1]===
+        bottles[to][bottles[to].length-1];
+}
+
+async function tapBottle(index){
+ if(busy||won)return;
+
+ if(selected===-1){
+  if(bottles[index].length===0){
+   document.getElementById("message").textContent="પહેલા રંગવાળી બોટલ પસંદ કરો.";
+   return;
+  }
+  selected=index;
+  playTone(450,.08);
+  render();
+  return;
+ }
+
+ if(selected===index){
+  selected=-1;
+  render();
+  return;
+ }
+
+ if(!canPour(selected,index)){
+  if(bottles[index].length>0){
+   selected=index;
+   render();
+   document.getElementById("message").textContent=
+    "આ બોટલમાં આ રંગ રેડી શકાતો નથી.";
+  }else{
+   document.getElementById("message").textContent=
+    "આ ચાલ શક્ય નથી.";
+  }
+  playTone(180,.12,"square",.04);
+  return;
+ }
+
+ const from=selected;
+ const to=index;
+ selected=-1;
+ busy=true;
+ await animatePour(from,to);
+ busy=false;
+}
+
+async function animatePour(from,to){
+ const source=document.querySelector(
+  `.bottle[data-index="${from}"]`
+ );
+ const target=document.querySelector(
+  `.bottle[data-index="${to}"]`
+ );
+
+ if(!source||!target)return;
+
+ const sourceRect=source.getBoundingClientRect();
+ const targetRect=target.getBoundingClientRect();
+
+ const color=bottles[from][bottles[from].length-1];
+ const targetCount=bottles[to].length;
+
+ const clone=source.cloneNode(true);
+ clone.classList.remove("selected");
+ clone.classList.add("floating-bottle");
+ clone.style.left=sourceRect.left+"px";
+ clone.style.top=sourceRect.top+"px";
+ clone.style.width=sourceRect.width+"px";
+ clone.style.height=sourceRect.height+"px";
+ clone.style.transform="translate(0px,0px) rotate(0deg)";
+ document.body.appendChild(clone);
+
+ source.style.visibility="hidden";
+
+ // બોટલ પહેલા ઊંચકાય
+ await sleep(60);
+ clone.style.transform="translate(0px,-65px) rotate(0deg)";
+ await sleep(680);
+
+ // પછી બીજી બોટલ તરફ જાય અને નમે
+ const direction=targetRect.left>sourceRect.left?1:-1;
+ const dx=targetRect.left+targetRect.width/2-
+          (sourceRect.left+sourceRect.width/2)-direction*38;
+ const dy=targetRect.top-sourceRect.top-5;
+ const angle=direction*43;
+
+ clone.style.transform=
+  `translate(${dx}px,${dy}px) rotate(${angle}deg)`;
+
+ await sleep(720);
+
+ // નમેલી બોટલના મોઢાનું સાચું સ્થાન માપવું
+ const mouth=clone.querySelector(".mouth");
+ const mouthRect=mouth.getBoundingClientRect();
+
+ const x1=mouthRect.left+mouthRect.width/2;
+ const y1=mouthRect.top+mouthRect.height/2;
+
+ const x2=targetRect.left+targetRect.width/2;
+ const y2=targetRect.top+27;
+
+ const lineX=x2-x1;
+ const lineY=y2-y1;
+ const distance=Math.sqrt(lineX*lineX+lineY*lineY);
+ const angleDeg=Math.atan2(lineY,lineX)*180/Math.PI;
+
+ const stream=document.createElement("div");
+ stream.id="pour-stream";
+ stream.style.left=x1+"px";
+ stream.style.top=y1+"px";
+ stream.style.width=distance+"px";
+ stream.style.transform=`rotate(${angleDeg}deg)`;
+ document.body.appendChild(stream);
+
+ await sleep(80);
+ stream.classList.add("show");
+ playPourSound();
+
+ // બીજી બોટલમાં નવું લેયર ધીમે ધીમે ભરાય
+ const targetLiquid=target.querySelector(".liquid-area");
+ const fill=document.createElement("div");
+ fill.className="pour-fill";
+ fill.style.bottom=(targetCount*25)+"%";
+ fill.style.background=
+  `linear-gradient(90deg,${shade(color,-20)},${COLORS[color]},${shade(color,20)})`;
+ targetLiquid.appendChild(fill);
+
+ await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+ fill.style.transform="scaleY(1)";
+
+ await sleep(900);
+
+ stream.classList.remove("show");
+ await sleep(100);
+ stream.remove();
+
+ // બોટલ પાછી પોતાની જગ્યા પર આવે
+ clone.style.transform="translate(0px,-65px) rotate(0deg)";
+ await sleep(350);
+ clone.style.transform="translate(0px,0px) rotate(0deg)";
+ await sleep(650);
+
+ clone.remove();
+ source.style.visibility="visible";
+
+ // હવે એક જ લેયર બીજી બોટલમાં ટ્રાન્સફર થાય
+ history.push({
+  bottles:copyLayout(bottles),
+  moves:moves
+ });
+
+ bottles[from].pop();
+ bottles[to].push(color);
+
+ moves++;
+ updateStats();
+ render();
+
+ document.getElementById("message").textContent=
+  "પાણી સફળતાપૂર્વક રેડાયું!";
+
+ playTone(550,.12);
+
+ checkWin();
+}
+
+function checkWin(){
+ const complete=bottles.every(bottle=>{
+  if(bottle.length===0)return true;
+  if(bottle.length!==4)return false;
+  return bottle.every(color=>color===bottle[0]);
+ });
+
+ if(complete){
+  won=true;
+  unlockedLevel=Math.max(unlockedLevel,Math.min(100,levelNumber+1));
+
+  try{
+   localStorage.setItem("aaBottleUnlocked",unlockedLevel);
+  }catch(e){}
+
+  document.getElementById("message").textContent=
+   "🎉 અભિનંદન! લેવલ પૂરું થયું.";
+  document.getElementById("winPanel").style.display="block";
+  document.getElementById("nextBtn").disabled=levelNumber>=100;
+  playWinSound();
+ }
+}
+
+function restartLevel(){
+ if(busy)return;
+ bottles=copyLayout(startLayout);
+ selected=-1;
+ moves=0;
+ won=false;
+ history=[];
+ document.getElementById("winPanel").style.display="none";
+ document.getElementById("nextBtn").disabled=true;
+ document.getElementById("message").textContent="લેવલ ફરી શરૂ થયું.";
+ updateStats();
+ render();
+}
+
+function undoMove(){
+ if(busy||history.length===0)return;
+
+ const previous=history.pop();
+ bottles=copyLayout(previous.bottles);
+ moves=previous.moves;
+ selected=-1;
+ won=false;
+
+ document.getElementById("winPanel").style.display="none";
+ document.getElementById("nextBtn").disabled=true;
+ document.getElementById("message").textContent="છેલ્લી ચાલ પાછી લીધી.";
+ updateStats();
+ render();
+}
+
+function nextLevel(){
+ if(busy)return;
+ if(levelNumber>=100){
+  document.getElementById("message").textContent=
+   "બધા 100 લેવલ પૂરાં કર્યા! 🎉";
+  return;
+ }
+ if(!won)return;
+ loadLevel(levelNumber+1);
+}
+
+loadLevel(1);
+</script>
+</body>
+</html>

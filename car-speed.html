@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>A&AGame - Car Speed</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: #060a12;
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      background: rgba(15, 23, 42, 0.94);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      z-index: 10;
+    }
+
+    .brand {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #f87171;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #4f46e5, #0ea5e9);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 7px 12px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn:active {
+      transform: scale(0.95);
+    }
+
+    .hud {
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 12px;
+      background: rgba(15, 23, 42, 0.8);
+      font-size: 0.9rem;
+      font-weight: 700;
+      z-index: 10;
+    }
+
+    .hud span {
+      color: #fde047;
+    }
+
+    .arena {
+      flex: 1;
+      position: relative;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    canvas#carCanvas {
+      width: 100%;
+      height: 100%;
+      max-width: 460px;
+      display: block;
+      touch-action: none;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(6, 10, 18, 0.88);
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      padding: 20px;
+      text-align: center;
+      z-index: 20;
+    }
+
+    .overlay.show {
+      display: flex;
+    }
+
+    .overlay h2 {
+      font-size: 1.5rem;
+      color: #f87171;
+    }
+
+    .overlay p {
+      color: #cbd5e1;
+      font-size: 0.95rem;
+    }
+
+    .revive-btn {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 11px 18px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .double-btn {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #0f172a;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 18px;
+      font-size: 0.92rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .touch-controls {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 14px;
+      background: rgba(15, 23, 42, 0.94);
+      z-index: 10;
+    }
+
+    .steer-btn {
+      flex: 1;
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #fff;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 1.05rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .steer-btn:active {
+      background: #334155;
+      transform: scale(0.97);
+    }
+
+    .nitro-btn {
+      background: linear-gradient(135deg, #ef4444, #f97316);
+      border: none;
+    }
+
+    .ad-banner {
+      width: 100%;
+      min-height: 50px;
+      background: #04070d;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #64748b;
+      font-size: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <div class="brand">🏎️ A&AGame • Car Speed</div>
+    <button class="btn" onclick="goHome()">🏠 Home</button>
+  </div>
+
+  <div class="hud">
+    <div>Distance: <span id="distVal">0</span>m</div>
+    <div>Coins: <span id="coinVal">0</span></div>
+    <div>Speed: <span id="spdVal">80</span> km/h</div>
+  </div>
+
+  <div class="arena" id="arena">
+    <canvas id="carCanvas"></canvas>
+
+    <div class="overlay" id="crashOverlay">
+      <h2>💥 કાર ટકરાઈ ગઈ!</h2>
+      <p id="crashSummary">તમે 0m અંતર કાપ્યું</p>
+      <button class="revive-btn" id="reviveBtn" onclick="reviveWithAd()">🎬 Revive (Ad Watch)</button>
+      <button class="double-btn" id="doubleBtn" onclick="doubleCoinsWithAd()">⚡ 2X Coins મેળવો (Ad)</button>
+      <button class="btn" onclick="restartGame()">🔄 ફરીથી રમો</button>
+    </div>
+  </div>
+
+  <div class="touch-controls">
+    <button class="steer-btn" id="leftBtn">⬅️ ડાબે</button>
+    <button class="steer-btn nitro-btn" id="nitroBtn">🔥 Nitro</button>
+    <button class="steer-btn" id="rightBtn">જમણે ➡️</button>
+  </div>
+
+  <div class="ad-banner">
+    <span>A&AGame • Car Speed Banner Ad Slot (AdMob Ready)</span>
+  </div>
+
+  <script>
+    const AdManager = {
+      crashesSinceAd: 0,
+      onCrash: function() {
+        this.crashesSinceAd++;
+        if (this.crashesSinceAd >= 3) {
+          this.crashesSinceAd = 0;
+          if (window.AndroidAds && typeof window.AndroidAds.showInterstitial === 'function') {
+            window.AndroidAds.showInterstitial();
+          }
+        }
+      },
+      showRewarded: function(cb) {
+        if (window.AndroidAds && typeof window.AndroidAds.showRewarded === 'function') {
+          window.AndroidAds.showRewarded();
+        }
+        cb();
+      }
+    };
+
+    const canvas = document.getElementById('carCanvas');
+    const ctx = canvas.getContext('2d');
+    let W = 360, H = 500;
+
+    function resize() {
+      const box = document.getElementById('arena');
+      const dpr = window.devicePixelRatio || 1;
+      W = Math.min(460, box.clientWidth);
+      H = box.clientHeight;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const LANES = 4;
+    let laneWidth = W / LANES;
+
+    let currentLane = 1;
+    let carX = W / 2;
+    let carY = H - 110;
+    let baseSpeed = 6.0;
+    let nitroActive = false;
+    let distance = 0;
+    let runCoins = 0;
+    let roadOffset = 0;
+    let traffic = [];
+    let coinsList = [];
+    let isGameOver = false;
+    let reviveUsed = false;
+    let doubleUsed = false;
+
+    const TRAFFIC_COLORS = ['#38bdf8', '#f59e0b', '#a855f7', '#22c55e', '#ec4899'];
+
+    function updateMetrics() {
+      laneWidth = W / LANES;
+      carY = H - 110;
+    }
+
+    function moveLeft() {
+      if (isGameOver) return;
+      currentLane = Math.max(0, currentLane - 1);
+    }
+
+    function moveRight() {
+      if (isGameOver) return;
+      currentLane = Math.min(LANES - 1, currentLane + 1);
+    }
+
+    document.getElementById('leftBtn').addEventListener('pointerdown', moveLeft);
+    document.getElementById('rightBtn').addEventListener('pointerdown', moveRight);
+
+    const nitroBtn = document.getElementById('nitroBtn');
+    nitroBtn.addEventListener('pointerdown', () => { nitroActive = true; });
+    nitroBtn.addEventListener('pointerup', () => { nitroActive = false; });
+    nitroBtn.addEventListener('pointerleave', () => { nitroActive = false; });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a') moveLeft();
+      if (e.key === 'ArrowRight' || e.key === 'd') moveRight();
+      if (e.key === 'ArrowUp' || e.key === ' ') nitroActive = true;
+    });
+    window.addEventListener('keyup', (e) => {
+      if (e.key === 'ArrowUp' || e.key === ' ') nitroActive = false;
+    });
+
+    function spawnEntities() {
+      if (Math.random() < 0.032) {
+        const lane = Math.floor(Math.random() * LANES);
+        const tooClose = traffic.some(t => t.lane === lane && t.y < 140);
+        // ખાતરી કરો કે ચારેય લેન એકસાથે બ્લોક ન થાય
+        const occupiedTop = traffic.filter(t => t.y < 120).length;
+        if (!tooClose && occupiedTop < LANES - 1) {
+          traffic.push({
+            lane,
+            y: -80,
+            w: Math.min(44, laneWidth * 0.62),
+            h: 74,
+            color: TRAFFIC_COLORS[Math.floor(Math.random() * TRAFFIC_COLORS.length)],
+            spdOffset: 1.5 + Math.random() * 1.5
+          });
+        }
+      }
+
+      if (Math.random() < 0.045) {
+        const lane = Math.floor(Math.random() * LANES);
+        const blocked = traffic.some(t => t.lane === lane && t.y < 90);
+        if (!blocked) {
+          coinsList.push({
+            lane,
+            y: -30,
+            r: 10
+          });
+        }
+      }
+    }
+
+    function drawHighway() {
+      updateMetrics();
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(0, 0, W, H);
+
+      // Highway borders
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(0, 0, 8, H);
+      ctx.fillRect(W - 8, 0, 8, H);
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([26, 26]);
+      ctx.lineDashOffset = -roadOffset;
+
+      for (let i = 1; i < LANES; i++) {
+        const lx = i * laneWidth;
+        ctx.beginPath();
+        ctx.moveTo(lx, 0);
+        ctx.lineTo(lx, H);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+    }
+
+    function drawSportCar(x, y, w, h, bodyColor, isPlayer) {
+      ctx.save();
+      ctx.translate(x, y);
+
+      // Shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.beginPath();
+      ctx.roundRect(-w / 2 + 3, -h / 2 + 6, w, h, 10);
+      ctx.fill();
+
+      // Nitro Flame
+      if (isPlayer && nitroActive) {
+        ctx.fillStyle = '#f97316';
+        ctx.beginPath();
+        ctx.moveTo(-8, h / 2);
+        ctx.lineTo(0, h / 2 + 22 + Math.random() * 10);
+        ctx.lineTo(8, h / 2);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // Wheels
+      ctx.fillStyle = '#090d16';
+      ctx.fillRect(-w / 2 - 3, -h / 2 + 10, 4, 14);
+      ctx.fillRect(w / 2 - 1, -h / 2 + 10, 4, 14);
+      ctx.fillRect(-w / 2 - 3, h / 2 - 24, 4, 14);
+      ctx.fillRect(w / 2 - 1, h / 2 - 24, 4, 14);
+
+      // Car Body
+      ctx.fillStyle = bodyColor;
+      ctx.beginPath();
+      ctx.roundRect(-w / 2, -h / 2, w, h, 10);
+      ctx.fill();
+
+      // Windshield
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.roundRect(-w / 2 + 5, -h / 2 + 16, w - 10, 16, 4);
+      ctx.fill();
+
+      // Rear glass
+      ctx.beginPath();
+      ctx.roundRect(-w / 2 + 6, h / 2 - 24, w - 12, 11, 3);
+      ctx.fill();
+
+      // Headlights
+      if (isPlayer) {
+        ctx.fillStyle = '#fef08a';
+        ctx.fillRect(-w / 2 + 5, -h / 2 + 1, 7, 4);
+        ctx.fillRect(w / 2 - 12, -h / 2 + 1, 7, 4);
+      }
+
+      ctx.restore();
+    }
+
+    function saveEarnedCoins(amount) {
+      const totalSaved = parseInt(localStorage.getItem('aa_coins')) || 0;
+      localStorage.setItem('aa_coins', totalSaved + amount);
+    }
+
+    function triggerGameOver() {
+      isGameOver = true;
+      nitroActive = false;
+      AdManager.onCrash();
+      saveEarnedCoins(runCoins);
+
+      document.getElementById('crashSummary').innerText =
+        `તમે ${Math.floor(distance)}m અંતર અને ${runCoins} Coins મેળવ્યા`;
+
+      document.getElementById('reviveBtn').style.display = reviveUsed ? 'none' : 'inline-block';
+      document.getElementById('doubleBtn').style.display = (doubleUsed || runCoins === 0) ? 'none' : 'inline-block';
+      document.getElementById('crashOverlay').classList.add('show');
+    }
+
+    function reviveWithAd() {
+      AdManager.showRewarded(() => {
+        reviveUsed = true;
+        traffic = traffic.filter(t => Math.abs(t.y - carY) > 160);
+        isGameOver = false;
+        document.getElementById('crashOverlay').classList.remove('show');
+        requestAnimationFrame(loop);
+      });
+    }
+
+    function doubleCoinsWithAd() {
+      if (doubleUsed || runCoins === 0) return;
+      AdManager.showRewarded(() => {
+        doubleUsed = true;
+        saveEarnedCoins(runCoins); // બીજા એટલા જ કોઈન્સ ઉમેરાઈ જશે (કુલ 2X)
+        runCoins *= 2;
+        document.getElementById('coinVal').innerText = runCoins;
+        document.getElementById('crashSummary').innerText =
+          `🎉 2X બોનસ! કુલ ${runCoins} Coins જમા થયા!`;
+        document.getElementById('doubleBtn').style.display = 'none';
+      });
+    }
+
+    function restartGame() {
+      currentLane = 1;
+      carX = W / 2;
+      baseSpeed = 6.0;
+      nitroActive = false;
+      distance = 0;
+      runCoins = 0;
+      traffic = [];
+      coinsList = [];
+      isGameOver = false;
+      reviveUsed = false;
+      doubleUsed = false;
+      document.getElementById('crashOverlay').classList.remove('show');
+      requestAnimationFrame(loop);
+    }
+
+    function goHome() {
+      window.location.href = 'index.html';
+    }
+
+    function loop() {
+      if (isGameOver) return;
+
+      baseSpeed = Math.min(13.5, baseSpeed + 0.002);
+      const activeSpeed = nitroActive ? baseSpeed * 1.45 : baseSpeed;
+
+      distance += activeSpeed * 0.16;
+      roadOffset = (roadOffset + activeSpeed) % 52;
+
+      const targetCarX = currentLane * laneWidth + laneWidth / 2;
+      carX += (targetCarX - carX) * 0.26;
+
+      spawnEntities();
+
+      traffic.forEach(t => { t.y += (activeSpeed - t.spdOffset); });
+      coinsList.forEach(c => { c.y += activeSpeed; });
+
+      const playerW = Math.min(44, laneWidth * 0.62);
+      const playerH = 74;
+
+      // Collision check
+      for (let i = 0; i < traffic.length; i++) {
+        const t = traffic[i];
+        const tx = t.lane * laneWidth + laneWidth / 2;
+        if (
+          Math.abs(carX - tx) < (playerW * 0.42 + t.w * 0.42) &&
+          Math.abs(carY - t.y) < (playerH * 0.42 + t.h * 0.42)
+        ) {
+          triggerGameOver();
+          return;
+        }
+      }
+
+      // Coins collection
+      coinsList = coinsList.filter(c => {
+        const cx = c.lane * laneWidth + laneWidth / 2;
+        const hit = Math.abs(carX - cx) < 24 && Math.abs(carY - c.y) < 34;
+        if (hit) runCoins += 5;
+        return !hit && c.y < H + 40;
+      });
+
+      traffic = traffic.filter(t => t.y < H + 100);
+
+      document.getElementById('distVal').innerText = Math.floor(distance);
+      document.getElementById('coinVal').innerText = runCoins;
+      document.getElementById('spdVal').innerText = Math.round(activeSpeed * 15);
+
+      ctx.clearRect(0, 0, W, H);
+      drawHighway();
+
+      coinsList.forEach(c => {
+        const cx = c.lane * laneWidth + laneWidth / 2;
+        ctx.fillStyle = '#facc15';
+        ctx.beginPath();
+        ctx.arc(cx, c.y, c.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ca8a04';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      });
+
+      traffic.forEach(t => {
+        const tx = t.lane * laneWidth + laneWidth / 2;
+        drawSportCar(tx, t.y, t.w, t.h, t.color, false);
+      });
+
+      drawSportCar(carX, carY, playerW, playerH, '#ef4444', true);
+
+      requestAnimationFrame(loop);
+    }
+
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

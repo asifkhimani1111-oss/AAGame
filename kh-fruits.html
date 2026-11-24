@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>A&AGame - K.H Fruits Business</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #132a1e 0%, #070d14 100%);
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 14px;
+      background: rgba(15, 23, 42, 0.94);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .brand {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #4ade80;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #4f46e5, #0ea5e9);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 7px 12px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn:active {
+      transform: scale(0.95);
+    }
+
+    .stats-bar {
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 12px;
+      background: rgba(15, 23, 42, 0.75);
+      font-size: 0.9rem;
+      font-weight: 700;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .stats-bar span {
+      color: #fde047;
+    }
+
+    .natu-box {
+      margin: 10px 14px 4px;
+      background: rgba(20, 83, 45, 0.45);
+      border: 1px solid rgba(74, 222, 128, 0.35);
+      border-radius: 14px;
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .natu-text {
+      font-size: 0.86rem;
+      color: #dcfce7;
+      font-weight: 600;
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .boost-btn {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #0f172a;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .msg-line {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #38bdf8;
+      min-height: 22px;
+      padding: 4px 12px;
+      font-weight: 600;
+    }
+
+    .shop-grid {
+      flex: 1;
+      padding: 8px 14px 16px;
+      max-width: 640px;
+      width: 100%;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .fruit-card {
+      background: rgba(30, 41, 59, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .fruit-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .fruit-emoji {
+      font-size: 1.9rem;
+    }
+
+    .stock-pill {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #86efac;
+    }
+
+    .fruit-name {
+      font-size: 0.98rem;
+      font-weight: 800;
+      color: #f8fafc;
+    }
+
+    .price-info {
+      font-size: 0.8rem;
+      color: #cbd5e1;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .buy-btn, .sell-btn {
+      flex: 1;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 6px;
+      font-size: 0.82rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .buy-btn {
+      background: #3b82f6;
+      color: #fff;
+    }
+
+    .sell-btn {
+      background: #10b981;
+      color: #06281e;
+    }
+
+    .buy-btn:disabled, .sell-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .ad-banner {
+      width: 100%;
+      min-height: 50px;
+      background: #04070d;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #64748b;
+      font-size: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <div class="brand">🍊 K.H Fruits • કે એચ ફ્રેશ ફ્રૂટ</div>
+    <button class="btn" onclick="goHome()">🏠 Home</button>
+  </div>
+
+  <div class="stats-bar">
+    <div>રોકડ / Coins: <span id="cashVal">100</span></div>
+    <div>કુલ નફો: <span id="profitVal">0</span></div>
+    <div id="doubleTag" style="color:#4ade80;"></div>
+  </div>
+
+  <div class="natu-box">
+    <div class="natu-text" id="natuDialogue">
+      👴 <strong>નટુ કાકા:</strong> "શેઠ, તાજા ફળો ખરીદીને વેચો અને નફો કમાવો!"
+    </div>
+    <button class="boost-btn" onclick="watchNatuAd()">🎬 2X Profit + બોનસ (Ad)</button>
+  </div>
+
+  <div class="msg-line" id="msgLine">ફળો ખરીદો (Buy) અને વેચીને (Sell) નફો મેળવો</div>
+
+  <div class="shop-grid" id="shopGrid"></div>
+
+  <div class="ad-banner">
+    <span>A&AGame • K.H Fruits Banner Ad Slot (AdMob Ready)</span>
+  </div>
+
+  <script>
+    const AdManager = {
+      salesSinceAd: 0,
+      onSaleBatch: function() {
+        this.salesSinceAd++;
+        if (this.salesSinceAd >= 6) {
+          this.salesSinceAd = 0;
+          if (window.AndroidAds && typeof window.AndroidAds.showInterstitial === 'function') {
+            window.AndroidAds.showInterstitial();
+          }
+        }
+      },
+      showRewarded: function(cb) {
+        if (window.AndroidAds && typeof window.AndroidAds.showRewarded === 'function') {
+          window.AndroidAds.showRewarded();
+        }
+        cb();
+      }
+    };
+
+    const FRUITS = [
+      { id: 'mango',  name: 'કેરી',     emoji: '🥭', buy: 20, sell: 32, stock: 2 },
+      { id: 'apple',  name: 'સફરજન',  emoji: '🍎', buy: 15, sell: 25, stock: 2 },
+      { id: 'banana', name: 'કેળા',    emoji: '🍌', buy: 10, sell: 18, stock: 3 },
+      { id: 'pome',   name: 'દાડમ',    emoji: '🍒', buy: 25, sell: 40, stock: 1 }
+    ];
+
+    let cash = parseInt(localStorage.getItem('aa_coins'));
+    if (isNaN(cash) || cash < 50) cash = 100;
+
+    let totalProfit = 0;
+    let doubleProfitUntil = 0;
+
+    function syncWallet() {
+      localStorage.setItem('aa_coins', cash);
+    }
+
+    function isDoubleActive() {
+      return Date.now() < doubleProfitUntil;
+    }
+
+    function updateUI() {
+      document.getElementById('cashVal').innerText = cash;
+      document.getElementById('profitVal').innerText = totalProfit;
+      document.getElementById('doubleTag').innerText = isDoubleActive() ? '⚡ 2X PROFIT ACTIVE' : '';
+
+      const grid = document.getElementById('shopGrid');
+      grid.innerHTML = '';
+
+      FRUITS.forEach((f, idx) => {
+        const effectiveSell = isDoubleActive() ? f.sell * 2 : f.sell;
+        const card = document.createElement('div');
+        card.className = 'fruit-card';
+
+        card.innerHTML = `
+          <div>
+            <div class="fruit-top">
+              <div class="fruit-emoji">${f.emoji}</div>
+              <div class="stock-pill">સ્ટોક: ${f.stock}</div>
+            </div>
+            <div class="fruit-name">${f.name}</div>
+            <div class="price-info">ખરીદી: ${f.buy} | વેચાણ: ${effectiveSell}</div>
+          </div>
+          <div class="card-actions">
+            <button class="buy-btn" onclick="buyFruit(${idx})" ${cash < f.buy ? 'disabled' : ''}>+ Buy</button>
+            <button class="sell-btn" onclick="sellFruit(${idx})" ${f.stock <= 0 ? 'disabled' : ''}>- Sell</button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function buyFruit(idx) {
+      const f = FRUITS[idx];
+      if (cash < f.buy) return;
+      cash -= f.buy;
+      f.stock += 1;
+      syncWallet();
+      document.getElementById('msgLine').innerText = `✅ ${f.name} (1) ખરીદી લીધી (-${f.buy})`;
+      document.getElementById('natuDialogue').innerHTML =
+        `👴 <strong>નટુ કાકા:</strong> "સરસ શેઠ! ${f.name} નો સ્ટોક તૈયાર છે, હવે વેચીને નફો લો!"`;
+      updateUI();
+    }
+
+    function sellFruit(idx) {
+      const f = FRUITS[idx];
+      if (f.stock <= 0) return;
+      f.stock -= 1;
+      const sellPrice = isDoubleActive() ? f.sell * 2 : f.sell;
+      const netGain = sellPrice - f.buy;
+      cash += sellPrice;
+      totalProfit += netGain;
+      syncWallet();
+      AdManager.onSaleBatch();
+
+      document.getElementById('msgLine').innerText =
+        `💰 ${f.name} વેચાઈ! +${sellPrice} મળ્યા (નફો: +${netGain})`;
+      document.getElementById('natuDialogue').innerHTML =
+        `👴 <strong>નટુ કાકા:</strong> "વાહ શેઠ! ${f.name} વેચાઈ ગઈ, ગલ્લામાં રોકડ વધી!"`;
+      updateUI();
+    }
+
+    function watchNatuAd() {
+      AdManager.showRewarded(() => {
+        doubleProfitUntil = Date.now() + 60 * 1000; // 60 સેકન્ડ 2X વેચાણ ભાવ
+        cash += 50;
+        syncWallet();
+        document.getElementById('msgLine').innerText =
+          '🎉 60 સેકન્ડ માટે 2X વેચાણ ભાવ અને +50 બોનસ મળ્યા!';
+        document.getElementById('natuDialogue').innerHTML =
+          `👴 <strong>નટુ કાકા:</strong> "શેઠ, 60 સેકન્ડ સુધી વેચાણ ભાવ ડબલ છે—ઝડપથી વેચી લો!"`;
+        updateUI();
+      });
+    }
+
+    function goHome() {
+      window.location.href = 'index.html';
+    }
+
+    setInterval(() => {
+      if (doubleProfitUntil > 0) updateUI();
+    }, 1000);
+
+    updateUI();
+  </script>
+</body>
+</html>

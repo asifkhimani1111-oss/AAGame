@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>A&AGame - Bike Speed</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: #070b14;
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      background: rgba(15, 23, 42, 0.92);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      z-index: 10;
+    }
+
+    .brand {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #38bdf8;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #4f46e5, #0ea5e9);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 7px 12px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn:active {
+      transform: scale(0.95);
+    }
+
+    .hud {
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 12px;
+      background: rgba(15, 23, 42, 0.75);
+      font-size: 0.9rem;
+      font-weight: 700;
+      z-index: 10;
+    }
+
+    .hud span {
+      color: #fde047;
+    }
+
+    .arena {
+      flex: 1;
+      position: relative;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    canvas#roadCanvas {
+      width: 100%;
+      height: 100%;
+      max-width: 460px;
+      display: block;
+      touch-action: none;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(7, 11, 20, 0.86);
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      padding: 20px;
+      text-align: center;
+      z-index: 20;
+    }
+
+    .overlay.show {
+      display: flex;
+    }
+
+    .overlay h2 {
+      font-size: 1.5rem;
+      color: #f87171;
+    }
+
+    .overlay p {
+      color: #cbd5e1;
+      font-size: 0.95rem;
+    }
+
+    .revive-btn {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 11px 18px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .touch-controls {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 14px;
+      background: rgba(15, 23, 42, 0.92);
+      z-index: 10;
+    }
+
+    .steer-btn {
+      flex: 1;
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #fff;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .steer-btn:active {
+      background: #334155;
+      transform: scale(0.97);
+    }
+
+    .ad-banner {
+      width: 100%;
+      min-height: 50px;
+      background: #05080f;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #64748b;
+      font-size: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <div class="brand">🏍️ A&AGame • Bike Speed</div>
+    <button class="btn" onclick="goHome()">🏠 Home</button>
+  </div>
+
+  <div class="hud">
+    <div>Distance: <span id="distVal">0</span>m</div>
+    <div>Coins: <span id="coinVal">0</span></div>
+    <div>Speed: <span id="spdVal">60</span> km/h</div>
+  </div>
+
+  <div class="arena" id="arena">
+    <canvas id="roadCanvas"></canvas>
+
+    <div class="overlay" id="crashOverlay">
+      <h2>💥 અકસ્માત થયો!</h2>
+      <p id="crashSummary">તમે 0m અંતર કાપ્યું</p>
+      <button class="revive-btn" onclick="reviveWithAd()">🎬 Revive (Ad Watch)</button>
+      <button class="btn" onclick="restartGame()">🔄 ફરીથી રમો</button>
+    </div>
+  </div>
+
+  <div class="touch-controls">
+    <button class="steer-btn" id="leftBtn">⬅️ ડાબે</button>
+    <button class="steer-btn" id="rightBtn">જમણે ➡️</button>
+  </div>
+
+  <div class="ad-banner">
+    <span>A&AGame • Bike Speed Banner Ad Slot (AdMob Ready)</span>
+  </div>
+
+  <script>
+    const AdManager = {
+      crashesSinceAd: 0,
+      onCrash: function() {
+        this.crashesSinceAd++;
+        if (this.crashesSinceAd >= 3) {
+          this.crashesSinceAd = 0;
+          if (window.AndroidAds && typeof window.AndroidAds.showInterstitial === 'function') {
+            window.AndroidAds.showInterstitial();
+          }
+        }
+      },
+      showRewarded: function(cb) {
+        if (window.AndroidAds && typeof window.AndroidAds.showRewarded === 'function') {
+          window.AndroidAds.showRewarded();
+        }
+        cb();
+      }
+    };
+
+    const canvas = document.getElementById('roadCanvas');
+    const ctx = canvas.getContext('2d');
+    let W = 360, H = 500;
+
+    function resize() {
+      const box = document.getElementById('arena');
+      const dpr = window.devicePixelRatio || 1;
+      W = Math.min(460, box.clientWidth);
+      H = box.clientHeight;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const LANES = 3;
+    let laneWidth = W / LANES;
+
+    let currentLane = 1;
+    let bikeX = W / 2;
+    let bikeY = H - 105;
+    let speed = 5.5;
+    let distance = 0;
+    let runCoins = 0;
+    let roadOffset = 0;
+    let obstacles = [];
+    let coinsList = [];
+    let isGameOver = false;
+    let reviveUsed = false;
+
+    function updateLaneMetrics() {
+      laneWidth = W / LANES;
+      bikeY = H - 105;
+    }
+
+    function moveLeft() {
+      if (isGameOver) return;
+      currentLane = Math.max(0, currentLane - 1);
+    }
+
+    function moveRight() {
+      if (isGameOver) return;
+      currentLane = Math.min(LANES - 1, currentLane + 1);
+    }
+
+    document.getElementById('leftBtn').addEventListener('pointerdown', moveLeft);
+    document.getElementById('rightBtn').addEventListener('pointerdown', moveRight);
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a') moveLeft();
+      if (e.key === 'ArrowRight' || e.key === 'd') moveRight();
+    });
+
+    function spawnEntities() {
+      if (Math.random() < 0.025) {
+        const lane = Math.floor(Math.random() * LANES);
+        const tooClose = obstacles.some(o => o.lane === lane && o.y < 130);
+        if (!tooClose) {
+          obstacles.push({
+            lane,
+            y: -60,
+            w: laneWidth * 0.45,
+            h: 64
+          });
+        }
+      }
+
+      if (Math.random() < 0.04) {
+        const lane = Math.floor(Math.random() * LANES);
+        const blocked = obstacles.some(o => o.lane === lane && o.y < 80);
+        if (!blocked) {
+          coinsList.push({
+            lane,
+            y: -30,
+            r: 11
+          });
+        }
+      }
+    }
+
+    function drawRoad() {
+      updateLaneMetrics();
+      // Asphalt road
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(0, 0, W, H);
+
+      // Side shoulders
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, 10, H);
+      ctx.fillRect(W - 10, 0, 10, H);
+
+      // Lane dividers
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([24, 24]);
+      ctx.lineDashOffset = -roadOffset;
+
+      for (let i = 1; i < LANES; i++) {
+        const lx = i * laneWidth;
+        ctx.beginPath();
+        ctx.moveTo(lx, 0);
+        ctx.lineTo(lx, H);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+    }
+
+    function drawBike(x, y) {
+      ctx.save();
+      ctx.translate(x, y);
+
+      // Shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.beginPath();
+      ctx.ellipse(0, 8, 18, 34, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Wheels
+      ctx.fillStyle = '#090d16';
+      ctx.fillRect(-7, -30, 14, 14);
+      ctx.fillRect(-7, 16, 14, 14);
+
+      // Red Sport Bike Body (Inspired by Indian Bikes icon)
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.roundRect(-11, -22, 22, 44, 8);
+      ctx.fill();
+
+      // Rider
+      ctx.fillStyle = '#f8fafc';
+      ctx.beginPath();
+      ctx.roundRect(-8, -10, 16, 18, 5);
+      ctx.fill();
+
+      // Helmet
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath();
+      ctx.arc(0, -14, 8.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawObstacles() {
+      obstacles.forEach(o => {
+        const ox = o.lane * laneWidth + laneWidth / 2;
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath();
+        ctx.roundRect(ox - o.w / 2, o.y, o.w, o.h, 8);
+        ctx.fill();
+
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(ox - o.w / 2 + 5, o.y + 8, o.w - 10, 14);
+      });
+    }
+
+    function drawCoins() {
+      coinsList.forEach(c => {
+        const cx = c.lane * laneWidth + laneWidth / 2;
+        ctx.fillStyle = '#facc15';
+        ctx.beginPath();
+        ctx.arc(cx, c.y, c.r, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = '#ca8a04';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      });
+    }
+
+    function triggerGameOver() {
+      isGameOver = true;
+      AdManager.onCrash();
+      const totalSaved = parseInt(localStorage.getItem('aa_coins')) || 0;
+      localStorage.setItem('aa_coins', totalSaved + runCoins);
+
+      document.getElementById('crashSummary').innerText =
+        `તમે ${Math.floor(distance)}m અંતર અને ${runCoins} Coins મેળવ્યા`;
+      const revBtn = document.querySelector('.revive-btn');
+      revBtn.style.display = reviveUsed ? 'none' : 'inline-block';
+      document.getElementById('crashOverlay').classList.add('show');
+    }
+
+    function reviveWithAd() {
+      AdManager.showRewarded(() => {
+        reviveUsed = true;
+        obstacles = obstacles.filter(o => Math.abs(o.y - bikeY) > 140);
+        isGameOver = false;
+        document.getElementById('crashOverlay').classList.remove('show');
+        requestAnimationFrame(loop);
+      });
+    }
+
+    function restartGame() {
+      currentLane = 1;
+      bikeX = W / 2;
+      speed = 5.5;
+      distance = 0;
+      runCoins = 0;
+      obstacles = [];
+      coinsList = [];
+      isGameOver = false;
+      reviveUsed = false;
+      document.getElementById('crashOverlay').classList.remove('show');
+      requestAnimationFrame(loop);
+    }
+
+    function goHome() {
+      window.location.href = 'index.html';
+    }
+
+    function loop() {
+      if (isGameOver) return;
+
+      speed = Math.min(13, speed + 0.0018);
+      distance += speed * 0.15;
+      roadOffset = (roadOffset + speed) % 48;
+
+      const targetBikeX = currentLane * laneWidth + laneWidth / 2;
+      bikeX += (targetBikeX - bikeX) * 0.25;
+
+      spawnEntities();
+
+      obstacles.forEach(o => { o.y += speed; });
+      coinsList.forEach(c => { c.y += speed; });
+
+      // Collision with obstacles
+      for (let i = 0; i < obstacles.length; i++) {
+        const o = obstacles[i];
+        const ox = o.lane * laneWidth + laneWidth / 2;
+        if (Math.abs(bikeX - ox) < (o.w * 0.42 + 10) && Math.abs(bikeY - (o.y + o.h / 2)) < (o.h * 0.42 + 22)) {
+          triggerGameOver();
+          return;
+        }
+      }
+
+      // Collect coins
+      coinsList = coinsList.filter(c => {
+        const cx = c.lane * laneWidth + laneWidth / 2;
+        const hit = Math.abs(bikeX - cx) < 22 && Math.abs(bikeY - c.y) < 28;
+        if (hit) runCoins += 5;
+        return !hit && c.y < H + 40;
+      });
+
+      obstacles = obstacles.filter(o => o.y < H + 80);
+
+      document.getElementById('distVal').innerText = Math.floor(distance);
+      document.getElementById('coinVal').innerText = runCoins;
+      document.getElementById('spdVal').innerText = Math.round(speed * 14);
+
+      ctx.clearRect(0, 0, W, H);
+      drawRoad();
+      drawCoins();
+      drawObstacles();
+      drawBike(bikeX, bikeY);
+
+      requestAnimationFrame(loop);
+    }
+
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

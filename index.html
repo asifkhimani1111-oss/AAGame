@@ -1,0 +1,318 @@
+
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101326">
+<title>A&AGame</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#293b69,#101326 70%);color:white;font-family:Arial,sans-serif;padding-bottom:25px}
+header{padding:15px;background:#151c35;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ffffff25}
+.logo{font-size:21px;font-weight:bold}
+button{border:0;border-radius:12px;padding:11px 15px;background:#5968ef;color:white;font-weight:bold;font-size:14px;cursor:pointer}
+button:disabled{opacity:.4}
+.screen{display:none;padding:15px}
+.screen.active{display:block}
+.menu-title{text-align:center;margin:25px 0}
+.menu-title h1{font-size:30px}
+.menu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;max-width:520px;margin:auto}
+.game-tile{min-height:120px;border-radius:19px;background:linear-gradient(145deg,#29365f,#1a2343);border:1px solid #ffffff25;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;font-weight:bold;cursor:pointer}
+.game-tile span{font-size:38px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:7px;flex-wrap:wrap}
+.stats{display:flex;justify-content:center;gap:12px;margin:17px 0}
+.stat{background:#202a4b;padding:10px 17px;border-radius:12px}
+#message{text-align:center;min-height:25px;color:#ffe28b;margin:12px 0}
+#bottles{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:24px 13px;max-width:600px;margin:25px auto;padding:22px 5px 28px;min-height:250px;position:relative}
+.bottle{width:78px;height:174px;position:relative;cursor:pointer;flex:0 0 78px;transform-origin:50% 95%;transition:transform .2s,filter .2s}
+.bottle.selected{transform:translateY(-13px);filter:drop-shadow(0 0 12px #ffe16a)}
+.glass-body{position:absolute;left:2px;bottom:0;width:74px;height:128px;border:3px solid #d9efffbf;border-radius:26px 26px 19px 19px;background:linear-gradient(90deg,#ffffff30,#ffffff05,#ffffff25);box-shadow:inset 5px 0 8px #ffffff20,inset -5px 0 8px #ffffff16,0 5px 12px #0005;overflow:hidden}
+.neck{position:absolute;top:14px;left:24px;width:30px;height:37px;border-left:3px solid #d8edffbb;border-right:3px solid #d8edffbb;background:linear-gradient(90deg,#ffffff20,#ffffff05,#ffffff25);z-index:2}
+.mouth{position:absolute;top:9px;left:22px;width:34px;height:10px;border:3px solid #dcefff;border-radius:50%;background:#15213b;z-index:3}
+.liquid-area{position:absolute;left:5px;right:5px;top:48px;bottom:5px;overflow:hidden;border-radius:13px 13px 14px 14px;z-index:1}
+.layer{position:absolute;left:0;width:100%;height:25%;border-top:1px solid #ffffff70;box-shadow:inset 0 4px 5px #ffffff30;border-radius:5px 5px 9px 9px}
+.glass-shine{position:absolute;left:10px;top:61px;width:6px;height:80px;border-radius:10px;background:linear-gradient(transparent,#ffffff9c,transparent);z-index:4;opacity:.7;pointer-events:none}
+.glass-shine-two{position:absolute;right:10px;top:76px;width:3px;height:55px;border-radius:10px;background:#ffffff70;z-index:4;pointer-events:none}
+.cap{position:absolute;top:0;left:22px;width:34px;height:13px;border-radius:5px 5px 3px 3px;background:linear-gradient(#ffe89b,#b9802e);border:1px solid #fff2b0;z-index:5}
+.bottle-number{position:absolute;bottom:-22px;width:100%;text-align:center;font-size:11px;color:#aebde6}
+.floating-bottle{position:fixed!important;left:0;top:0;z-index:10000;margin:0!important;flex:none!important;pointer-events:none;transition:transform .65s cubic-bezier(.2,.8,.2,1);transform-origin:50% 95%}
+#pour-stream{position:fixed;z-index:9999;height:8px;border-radius:100%;pointer-events:none;opacity:0;transform-origin:0 50%;background:linear-gradient(to bottom,#fff8a8,#ffe23d,#ffae21);box-shadow:0 0 7px #ffe45b,0 0 14px #ffb52e}
+#pour-stream.show{opacity:1;animation:waterFlow .18s linear infinite alternate}
+@keyframes waterFlow{from{filter:brightness(.9)}to{filter:brightness(1.4)}}
+.pour-fill{position:absolute;left:0;width:100%;height:25%;border-top:1px solid #ffffff80;border-radius:5px 5px 9px 9px;transform:scaleY(0);transform-origin:bottom;transition:transform .85s linear}
+.controls{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:18px auto}
+.controls button{min-width:95px}
+#winPanel{display:none;max-width:400px;margin:20px auto;text-align:center;padding:18px;border-radius:18px;background:#26375a;border:1px solid #ffe28b66}
+#winPanel h2{color:#ffe28b}
+@media(max-width:380px){#bottles{gap:24px 9px}.bottle{width:72px;flex-basis:72px}.glass-body{width:70px}.neck{left:21px}.mouth{left:19px}.cap{left:19px}}
+</style>
+</head>
+<body>
+
+<header>
+ <div class="logo">🎮 A&AGame</div>
+ <button onclick="goHome()">🏠 Home</button>
+</header>
+
+<section id="homeScreen" class="screen active">
+ <div class="menu-title">
+  <h1>🎮 A&AGame</h1>
+  <p>તમારી ગેમ રમો અને મજા કરો!</p>
+ </div>
+ <div class="menu-grid">
+  <div class="game-tile" onclick="comingSoon('Car Speed')"><span>🏎️</span>Car Speed</div>
+  <div class="game-tile" onclick="comingSoon('Bike Speed')"><span>🏍️</span>Bike Speed</div>
+  <div class="game-tile" onclick="comingSoon('Ludo')"><span>🎲</span>Ludo</div>
+  <div class="game-tile" onclick="comingSoon('Carrom')"><span>🎯</span>Carrom</div>
+  <div class="game-tile" onclick="startGame()"><span>🧪</span>Bottle Colour</div>
+  <div class="game-tile" onclick="comingSoon('Arrow Puzzle')"><span>🏹</span>Arrow Puzzle</div>
+  <div class="game-tile" onclick="comingSoon('K.H Fruits Business')"><span>🍎</span>K.H Fruits Business</div>
+  <div class="game-tile" onclick="comingSoon('Puzzle Game')"><span>🧩</span>Puzzle Game</div>
+ </div>
+</section>
+
+<section id="gameScreen" class="screen">
+ <div class="topbar">
+  <button onclick="goHome()">⬅ પાછા</button>
+  <strong>🧪 Bottle Colour</strong>
+  <button onclick="toggleSound()" id="soundBtn">🔊 Sound ON</button>
+ </div>
+ <div class="stats">
+  <div class="stat">Level: <b id="levelText">1</b></div>
+  <div class="stat">Moves: <b id="movesText">0</b></div>
+ </div>
+ <div id="message"></div>
+ <div id="bottles"></div>
+ <div class="controls">
+  <button onclick="restartLevel()">🔄 Restart</button>
+  <button onclick="undoMove()">↩ Undo</button>
+  <button onclick="nextLevel()" id="nextBtn" disabled>આગળ ➜</button>
+ </div>
+ <div id="winPanel">
+  <h2>🎉 Level Complete!</h2>
+  <p>ખૂબ સરસ!</p>
+  <button onclick="nextLevel()">આગળનું લેવલ ➜</button>
+ </div>
+</section>
+
+<script>
+const COLORS=["#f44336","#2196f3","#ffca28","#4caf50","#ab47bc","#ff7043","#26c6da","#ec407a","#8d6e63","#9ccc65"];
+
+let levelNumber=1,unlockedLevel=1,bottles=[],startLayout=[],selected=-1,moves=0,won=false,busy=false,soundOn=true,audioContext=null,history=[];
+
+try{unlockedLevel=Math.max(1,Math.min(100,Number(localStorage.getItem("aaBottleUnlocked"))||1))}catch(e){}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+function playTone(freq,duration,type="sine",volume=.08){
+ if(!soundOn)return;
+ try{
+  audioContext=audioContext||new(window.AudioContext||window.webkitAudioContext)();
+  if(audioContext.state==="suspended")audioContext.resume();
+  const o=audioContext.createOscillator(),g=audioContext.createGain();
+  o.type=type;o.frequency.value=freq;g.gain.value=volume;
+  g.gain.exponentialRampToValueAtTime(.001,audioContext.currentTime+duration);
+  o.connect(g);g.connect(audioContext.destination);o.start();o.stop(audioContext.currentTime+duration);
+ }catch(e){}
+}
+function playPourSound(){
+ if(!soundOn)return;
+ try{
+  audioContext=audioContext||new(window.AudioContext||window.webkitAudioContext)();
+  if(audioContext.state==="suspended")audioContext.resume();
+  const duration=.9,buffer=audioContext.createBuffer(1,audioContext.sampleRate*duration,audioContext.sampleRate),data=buffer.getChannelData(0);
+  for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*.16;
+  const source=audioContext.createBufferSource(),filter=audioContext.createBiquadFilter(),gain=audioContext.createGain();
+  source.buffer=buffer;filter.type="lowpass";filter.frequency.value=1100;
+  gain.gain.setValueAtTime(.001,audioContext.currentTime);
+  gain.gain.linearRampToValueAtTime(.12,audioContext.currentTime+.12);
+  gain.gain.setValueAtTime(.12,audioContext.currentTime+.65);
+  gain.gain.linearRampToValueAtTime(.001,audioContext.currentTime+.9);
+  source.connect(filter);filter.connect(gain);gain.connect(audioContext.destination);
+  source.start();source.stop(audioContext.currentTime+.9);
+ }catch(e){}
+}
+function playWinSound(){playTone(523,.2);setTimeout(()=>playTone(659,.2),180);setTimeout(()=>playTone(784,.35),360)}
+function toggleSound(){soundOn=!soundOn;document.getElementById("soundBtn").textContent=soundOn?"🔊 Sound ON":"🔇 Sound OFF";if(soundOn)playTone(600,.1)}
+function showScreen(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));document.getElementById(id).classList.add("active")}
+function goHome(){if(busy)return;selected=-1;showScreen("homeScreen")}
+function comingSoon(name){alert(name+" ગેમ હજી તૈયાર થઈ રહી છે.")}
+function startGame(){showScreen("gameScreen");loadLevel(levelNumber)}
+
+function makePuzzle(level){
+ const count=Math.min(2+Math.floor((level-1)/5),8);
+ let arr=[];
+ for(let c=0;c<count;c++)arr.push([c,c,c,c]);
+ arr.push([],[]);
+ let previous=null;
+ for(let i=0;i<Math.min(18+level*2,100);i++){
+  let possible=[];
+  for(let from=0;from<arr.length;from++){
+   if(!arr[from].length)continue;
+   for(let to=0;to<arr.length;to++){
+    if(from===to||arr[to].length>=4)continue;
+    if(arr[to].length&&arr[to][arr[to].length-1]!==arr[from][arr[from].length-1])continue;
+    if(previous&&previous.from===to&&previous.to===from)continue;
+    possible.push({from,to});
+   }
+  }
+  if(!possible.length)break;
+  const m=possible[Math.floor(Math.random()*possible.length)];
+  arr[m.to].push(arr[m.from].pop());previous=m;
+ }
+ return arr;
+}
+function copyLayout(a){return a.map(b=>b.slice())}
+function loadLevel(level){
+ levelNumber=Math.max(1,Math.min(100,level));
+ bottles=makePuzzle(levelNumber);startLayout=copyLayout(bottles);
+ selected=-1;moves=0;won=false;busy=false;history=[];
+ document.getElementById("winPanel").style.display="none";
+ document.getElementById("nextBtn").disabled=true;
+ document.getElementById("message").textContent="";
+ updateStats();render();
+}
+function updateStats(){document.getElementById("levelText").textContent=levelNumber;document.getElementById("movesText").textContent=moves}
+
+/* મહત્વનું: shade ને રંગનો નંબર નહીં, રંગનો HEX કોડ આપવો */
+function shade(hex,percent){
+ const n=parseInt(hex.slice(1),16);
+ let r=(n>>16)+percent,g=((n>>8)&255)+percent,b=(n&255)+percent;
+ r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min(255,g));b=Math.max(0,Math.min(255,b));
+ return "#"+(1<<24|r<<16|g<<8|b).toString(16).slice(1);
+}
+function colorGradient(index){
+ const hex=COLORS[index];
+ return `linear-gradient(90deg,${shade(hex,-20)},${hex},${shade(hex,20)})`;
+}
+function render(){
+ const area=document.getElementById("bottles");
+ area.innerHTML="";
+ bottles.forEach((layers,index)=>{
+  const bottle=document.createElement("div");
+  bottle.className="bottle"+(index===selected?" selected":"");
+  bottle.dataset.index=index;
+  const neck=document.createElement("div");neck.className="neck";
+  const mouth=document.createElement("div");mouth.className="mouth";
+  const body=document.createElement("div");body.className="glass-body";
+  const liquid=document.createElement("div");liquid.className="liquid-area";
+  layers.forEach((color,i)=>{
+   const layer=document.createElement("div");
+   layer.className="layer";layer.style.background=colorGradient(color);
+   layer.style.bottom=(i*25)+"%";liquid.appendChild(layer);
+  });
+  body.appendChild(liquid);
+  const shine=document.createElement("div");shine.className="glass-shine";
+  const shine2=document.createElement("div");shine2.className="glass-shine-two";
+  bottle.append(neck,mouth,body,shine,shine2);
+  if(layers.length===4){const cap=document.createElement("div");cap.className="cap";bottle.appendChild(cap)}
+  const number=document.createElement("div");number.className="bottle-number";number.textContent=index+1;bottle.appendChild(number);
+  bottle.addEventListener("click",()=>tapBottle(index));
+  area.appendChild(bottle);
+ });
+}
+function canPour(from,to){
+ if(from===to||!bottles[from].length||bottles[to].length>=4)return false;
+ return bottles[to].length===0||bottles[from].at(-1)===bottles[to].at(-1);
+}
+async function tapBottle(index){
+ if(busy||won)return;
+ if(selected===-1){
+  if(!bottles[index].length){document.getElementById("message").textContent="";return}
+  selected=index;playTone(450,.08);render();return;
+ }
+ if(selected===index){selected=-1;render();return}
+ if(!canPour(selected,index)){
+  if(bottles[index].length){selected=index;render()}
+  playTone(180,.12,"square",.04);return;
+ }
+ const from=selected,to=index;selected=-1;busy=true;
+ await animatePour(from,to);busy=false;
+}
+async function animatePour(from,to){
+ const source=document.querySelector(`.bottle[data-index="${from}"]`);
+ const target=document.querySelector(`.bottle[data-index="${to}"]`);
+ if(!source||!target)return;
+ const sr=source.getBoundingClientRect(),tr=target.getBoundingClientRect();
+ const color=bottles[from].at(-1),targetCount=bottles[to].length;
+ const clone=source.cloneNode(true);
+ clone.classList.remove("selected");clone.classList.add("floating-bottle");
+ clone.style.left=sr.left+"px";clone.style.top=sr.top+"px";
+ clone.style.width=sr.width+"px";clone.style.height=sr.height+"px";
+ clone.style.transform="translate(0px,0px) rotate(0deg)";
+ document.body.appendChild(clone);source.style.visibility="hidden";
+
+ await sleep(50);
+ clone.style.transform="translate(0px,-65px) rotate(0deg)";
+ await sleep(680);
+
+ const direction=tr.left>sr.left?1:-1;
+ const dx=tr.left+tr.width/2-(sr.left+sr.width/2)-direction*38;
+ const dy=tr.top-sr.top-5;
+ clone.style.transform=`translate(${dx}px,${dy}px) rotate(${direction*43}deg)`;
+ await sleep(720);
+
+ const mouth=clone.querySelector(".mouth"),mr=mouth.getBoundingClientRect();
+ const x1=mr.left+mr.width/2,y1=mr.top+mr.height/2;
+ const x2=tr.left+tr.width/2,y2=tr.top+27;
+ const lx=x2-x1,ly=y2-y1;
+ const distance=Math.sqrt(lx*lx+ly*ly),angle=Math.atan2(ly,lx)*180/Math.PI;
+ const stream=document.createElement("div");stream.id="pour-stream";
+ stream.style.left=x1+"px";stream.style.top=y1+"px";
+ stream.style.width=distance+"px";stream.style.transform=`rotate(${angle}deg)`;
+ document.body.appendChild(stream);await sleep(70);stream.classList.add("show");playPourSound();
+
+ const targetLiquid=target.querySelector(".liquid-area");
+ const fill=document.createElement("div");fill.className="pour-fill";
+ fill.style.bottom=(targetCount*25)+"%";fill.style.background=colorGradient(color);
+ targetLiquid.appendChild(fill);
+ await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+ fill.style.transform="scaleY(1)";
+ await sleep(900);
+ stream.classList.remove("show");await sleep(100);stream.remove();
+
+ clone.style.transform="translate(0px,-65px) rotate(0deg)";
+ await sleep(350);
+ clone.style.transform="translate(0px,0px) rotate(0deg)";
+ await sleep(650);
+ clone.remove();source.style.visibility="visible";
+
+ history.push({bottles:copyLayout(bottles),moves});
+ bottles[from].pop();bottles[to].push(color);moves++;
+ updateStats();render();checkWin();
+}
+function checkWin(){
+ const complete=bottles.every(b=>b.length===0||(b.length===4&&b.every(c=>c===b[0])));
+ if(!complete)return;
+ won=true;unlockedLevel=Math.max(unlockedLevel,Math.min(100,levelNumber+1));
+ try{localStorage.setItem("aaBottleUnlocked",unlockedLevel)}catch(e){}
+ document.getElementById("message").textContent="🎉 Level Complete!";
+ document.getElementById("winPanel").style.display="block";
+ document.getElementById("nextBtn").disabled=levelNumber>=100;
+ playWinSound();
+}
+function restartLevel(){
+ if(busy)return;
+ bottles=copyLayout(startLayout);selected=-1;moves=0;won=false;history=[];
+ document.getElementById("winPanel").style.display="none";
+ document.getElementById("nextBtn").disabled=true;
+ document.getElementById("message").textContent="";
+ updateStats();render();
+}
+function undoMove(){
+ if(busy||!history.length)return;
+ const p=history.pop();bottles=copyLayout(p.bottles);moves=p.moves;
+ selected=-1;won=false;
+ document.getElementById("winPanel").style.display="none";
+ document.getElementById("nextBtn").disabled=true;
+ document.getElementById("message").textContent="";
+ updateStats();render();
+}
+function nextLevel(){
+ if(busy||!won||levelNumber>=100)return;
+ loadLevel(levelNumber+1);
+}
+loadLevel(1);
+</script>
+</body>
+</html>

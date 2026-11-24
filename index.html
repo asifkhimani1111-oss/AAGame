@@ -1,0 +1,457 @@
+
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101326">
+<title>A&AGame - Bottle Colour</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#101326;color:white;
+ font-family:Arial,sans-serif;text-align:center;
+}
+header{
+ background:#1b2342;padding:17px;
+ font-size:23px;font-weight:bold;
+}
+.screen{display:none;padding:15px}
+.screen.active{display:block}
+button{
+ border:0;border-radius:12px;padding:12px 17px;
+ margin:6px;font-size:16px;font-weight:bold;
+ background:#ffd34e;color:#171717;
+}
+button:disabled{opacity:.4}
+.menu-grid{
+ display:grid;grid-template-columns:repeat(2,1fr);
+ gap:12px;max-width:500px;margin:25px auto;
+}
+.game-tile{
+ background:#222d52;color:white;
+ min-height:100px;font-size:17px;
+}
+.game-tile span{display:block;font-size:30px;margin-bottom:8px}
+.info{margin:12px;color:#dce4ff}
+.note{font-size:13px;color:#b8c5e8;line-height:1.5}
+#bottles{
+ display:flex;justify-content:center;align-items:flex-end;
+ flex-wrap:wrap;gap:28px 18px;
+ max-width:600px;margin:45px auto 30px;
+}
+.bottle-wrap{
+ width:78px;height:195px;position:relative;
+ display:flex;justify-content:center;align-items:flex-end;
+}
+.bottle{
+ width:66px;height:150px;position:relative;
+ border:3px solid rgba(220,245,255,.8);
+ border-top:0;border-radius:20px 20px 29px 29px;
+ background:linear-gradient(90deg,
+ rgba(255,255,255,.24),rgba(255,255,255,.03) 35%,
+ rgba(255,255,255,.15) 75%,rgba(255,255,255,.28));
+ box-shadow:inset 5px 0 9px #ffffff20,
+ 0 8px 16px #0006;
+ display:flex;flex-direction:column-reverse;
+ overflow:visible;
+ cursor:pointer;
+ transition:transform .25s,border-color .25s;
+}
+.bottle:before{
+ content:"";position:absolute;
+ width:27px;height:22px;left:16px;top:-21px;
+ border:3px solid rgba(220,245,255,.85);
+ border-bottom:0;border-radius:7px 7px 0 0;
+ background:linear-gradient(90deg,#ffffff22,#ffffff08);
+}
+.bottle:after{
+ content:"";position:absolute;
+ width:9px;height:105px;left:7px;top:17px;
+ border-radius:12px;background:#ffffff35;
+ pointer-events:none;
+}
+.bottle.selected{
+ transform:translateY(-15px);
+ border-color:#ffe36a;
+ filter:drop-shadow(0 0 8px #ffe36a);
+}
+.bottle.capped .cap{display:block}
+.cap{
+ display:none;position:absolute;z-index:5;
+ width:34px;height:12px;left:13px;top:-28px;
+ border-radius:5px 5px 3px 3px;
+ background:linear-gradient(#fff0a8,#c18b20);
+ border:1px solid #ffe7a1;
+}
+.layer{
+ width:100%;height:25%;flex:0 0 25%;
+ border-top:1px solid #ffffff55;
+ position:relative;
+ overflow:hidden;
+}
+.layer:first-child{border-radius:0 0 19px 19px}
+.layer:before{
+ content:"";position:absolute;top:0;left:0;
+ width:100%;height:4px;background:#ffffff45;
+}
+.bottle-number{
+ position:absolute;bottom:-23px;width:100%;
+ color:#aebbe4;font-size:12px;
+}
+#message{min-height:30px;color:#ffe16a;font-weight:bold}
+#nextBtn{background:#45dc8b}
+#homeBtn{background:#a8b9ff}
+#pourStream{
+ position:fixed;z-index:20;pointer-events:none;
+ height:9px;border-radius:20px;
+ transform-origin:left center;
+ opacity:0;
+}
+#pourStream.active{animation:stream .65s ease-in-out}
+@keyframes stream{
+ 0%{opacity:0;transform:scaleX(.1)}
+ 20%{opacity:1;transform:scaleX(1)}
+ 75%{opacity:1;transform:scaleX(1)}
+ 100%{opacity:0;transform:scaleX(.1)}
+}
+@keyframes tilt{
+ 0%,100%{transform:rotate(0)}
+ 35%,70%{transform:rotate(12deg) translateY(-7px)}
+}
+.bottle.pouring{animation:tilt .65s ease}
+</style>
+</head>
+
+<body>
+<header>🎮 A&AGame</header>
+
+<section id="menu" class="screen active">
+ <h2>મુખ્ય મેનુ</h2>
+ <div class="menu-grid">
+  <button class="game-tile"><span>🚗</span>Car Speed</button>
+  <button class="game-tile"><span>🏍️</span>Bike Speed</button>
+  <button class="game-tile"><span>🎲</span>Ludo</button>
+  <button class="game-tile"><span>🎯</span>Carrom</button>
+  <button class="game-tile" onclick="startGame()"><span>🧪</span>Bottle Colour</button>
+  <button class="game-tile"><span>🏹</span>Arrow Puzzle</button>
+  <button class="game-tile"><span>🍎</span>K.H Fruits Business</button>
+  <button class="game-tile"><span>🧩</span>Puzzle Game</button>
+ </div>
+</section>
+
+<section id="game" class="screen">
+ <h2>🧪 Bottle Colour</h2>
+ <div class="info">
+  Level: <b id="level">1</b>
+  &nbsp; | &nbsp; Moves: <b id="moves">0</b>
+ </div>
+ <p class="note">
+  રંગવાળી બોટલ પસંદ કરો અને પછી બીજી બોટલ પસંદ કરો.
+  એક સમયે એક લેયર રેડાશે.
+ </p>
+
+ <div id="bottles"></div>
+ <div id="message">રંગ ગોઠવવાનું શરૂ કરો!</div>
+ <button onclick="restartLevel()">🔄 Restart</button>
+ <button id="nextBtn" onclick="nextLevel()" disabled>આગળનો લેવલ ➜</button>
+ <br>
+ <button id="homeBtn" onclick="goHome()">🏠 Home</button>
+</section>
+
+<div id="pourStream"></div>
+
+<script>
+const PALETTE=[
+ ["#f44336","#2196f3"],
+ ["#20c878","#ffca28"],
+ ["#a855f7","#ff7b28"],
+ ["#ec4899","#06b6d4"],
+ ["#8bc34a","#e85d75"]
+];
+
+let levelNumber=1;
+let bottles=[];
+let startLayout=[];
+let selected=-1;
+let moves=0;
+let won=false;
+let busy=false;
+let audioContext=null;
+
+function showScreen(id){
+ document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+ document.getElementById(id).classList.add("active");
+}
+
+function startGame(){
+ levelNumber=1;
+ loadLevel();
+ showScreen("game");
+}
+
+function makePuzzle(){
+ const colors=PALETTE[(levelNumber-1)%PALETTE.length];
+
+ // દરેક રંગના ચાર લેયર.
+ // આ શરૂઆતની ગોઠવણી બે ખાલી બોટલ સાથે ઉકેલી શકાય તેવી છે.
+ return [
+  [colors[0],colors[0],colors[1],colors[1]],
+  [colors[1],colors[1],colors[0],colors[0]],
+  [],
+  []
+ ];
+}
+
+function loadLevel(){
+ bottles=makePuzzle();
+ startLayout=bottles.map(b=>[...b]);
+ selected=-1;
+ moves=0;
+ won=false;
+ busy=false;
+ document.getElementById("nextBtn").disabled=true;
+ say("બોટલ પસંદ કરીને રંગ રેડો!");
+ render();
+}
+
+function render(){
+ const area=document.getElementById("bottles");
+ area.innerHTML="";
+ document.getElementById("level").textContent=levelNumber;
+ document.getElementById("moves").textContent=moves;
+
+ bottles.forEach((b,i)=>{
+  const wrap=document.createElement("div");
+  wrap.className="bottle-wrap";
+
+  const bottle=document.createElement("div");
+  bottle.className="bottle";
+  if(selected===i)bottle.classList.add("selected");
+
+  const full=b.length===4&&b.every(c=>c===b[0]);
+  if(full)bottle.classList.add("capped");
+
+  const cap=document.createElement("div");
+  cap.className="cap";
+  bottle.appendChild(cap);
+
+  b.forEach(color=>{
+   const layer=document.createElement("div");
+   layer.className="layer";
+   layer.style.background=
+    "linear-gradient(90deg,#ffffff25,"+color+" 30%,"+color+" 75%,#ffffff30)";
+   bottle.appendChild(layer);
+  });
+
+  bottle.onclick=()=>tapBottle(i);
+
+  const number=document.createElement("div");
+  number.className="bottle-number";
+  number.textContent=i+1;
+
+  wrap.appendChild(bottle);
+  wrap.appendChild(number);
+  area.appendChild(wrap);
+ });
+}
+
+function unlockAudio(){
+ const AC=window.AudioContext||window.webkitAudioContext;
+ if(!AC)return null;
+ if(!audioContext)audioContext=new AC();
+ if(audioContext.state==="suspended")audioContext.resume();
+ return audioContext;
+}
+
+function pourSound(){
+ const ctx=unlockAudio();
+ if(!ctx)return;
+
+ const duration=.48;
+ const length=Math.floor(ctx.sampleRate*duration);
+ const buffer=ctx.createBuffer(1,length,ctx.sampleRate);
+ const data=buffer.getChannelData(0);
+
+ for(let i=0;i<length;i++){
+  const fade=1-i/length;
+  data[i]=(Math.random()*2-1)*fade*.22;
+ }
+
+ const noise=ctx.createBufferSource();
+ noise.buffer=buffer;
+
+ const filter=ctx.createBiquadFilter();
+ filter.type="lowpass";
+ filter.frequency.value=850;
+
+ const gain=ctx.createGain();
+ gain.gain.setValueAtTime(.001,ctx.currentTime);
+ gain.gain.linearRampToValueAtTime(.24,ctx.currentTime+.08);
+ gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+duration);
+
+ noise.connect(filter);
+ filter.connect(gain);
+ gain.connect(ctx.destination);
+ noise.start();
+ noise.stop(ctx.currentTime+duration);
+}
+
+function winSound(){
+ const ctx=unlockAudio();
+ if(!ctx)return;
+ [523,659,784].forEach((hz,i)=>{
+  const osc=ctx.createOscillator();
+  const gain=ctx.createGain();
+  osc.frequency.value=hz;
+  osc.type="sine";
+  gain.gain.setValueAtTime(.001,ctx.currentTime+i*.15);
+  gain.gain.linearRampToValueAtTime(.18,ctx.currentTime+i*.15+.04);
+  gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+i*.15+.35);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(ctx.currentTime+i*.15);
+  osc.stop(ctx.currentTime+i*.15+.4);
+ });
+}
+
+function say(message){
+ document.getElementById("message").textContent=message;
+}
+
+function animatePour(from,to,color){
+ const source=document.querySelectorAll(".bottle")[from];
+ const target=document.querySelectorAll(".bottle")[to];
+ const stream=document.getElementById("pourStream");
+
+ if(!source||!target)return Promise.resolve();
+
+ const a=source.getBoundingClientRect();
+ const b=target.getBoundingClientRect();
+
+ const x1=a.left+a.width/2;
+ const y1=a.top+25;
+ const x2=b.left+b.width/2;
+ const y2=b.top+30;
+
+ const dx=x2-x1;
+ const dy=y2-y1;
+ const distance=Math.sqrt(dx*dx+dy*dy);
+ const angle=Math.atan2(dy,dx)*180/Math.PI;
+
+ stream.style.left=x1+"px";
+ stream.style.top=y1+"px";
+ stream.style.width=distance+"px";
+ stream.style.background=color;
+ stream.style.transform="rotate("+angle+"deg)";
+ stream.classList.remove("active");
+ void stream.offsetWidth;
+ stream.classList.add("active");
+ source.classList.add("pouring");
+
+ return new Promise(resolve=>{
+  setTimeout(()=>{
+   source.classList.remove("pouring");
+   stream.classList.remove("active");
+   resolve();
+  },650);
+ });
+}
+
+async function tapBottle(i){
+ if(won||busy)return;
+
+ unlockAudio();
+
+ if(selected===-1){
+  if(bottles[i].length===0){
+   say("પહેલા રંગવાળી બોટલ પસંદ કરો.");
+   return;
+  }
+  selected=i;
+  say("હવે બીજી બોટલ પસંદ કરો.");
+  render();
+  return;
+ }
+
+ if(selected===i){
+  selected=-1;
+  say("પસંદગી રદ થઈ.");
+  render();
+  return;
+ }
+
+ const source=bottles[selected];
+ const target=bottles[i];
+ const color=source[source.length-1];
+ const targetTop=target.length?target[target.length-1]:null;
+
+ if(target.length>=4){
+  say("આ બોટલ ભરાઈ ગઈ છે.");
+  return;
+ }
+
+ if(target.length>0&&targetTop!==color){
+  selected=i;
+  say("આ રંગ અહીં રેડી શકાતો નથી. બીજી બોટલ પસંદ કરો.");
+  render();
+  return;
+ }
+
+ const from=selected;
+ selected=-1;
+ busy=true;
+ render();
+
+ await animatePour(from,i,color);
+ pourSound();
+
+ source.pop();
+ target.push(color);
+ moves++;
+ busy=false;
+
+ document.getElementById("moves").textContent=moves;
+
+ if(checkWin()){
+  won=true;
+  say("🎉 અભિનંદન! લેવલ પૂરું થયું!");
+  document.getElementById("nextBtn").disabled=false;
+  winSound();
+ }else{
+  say("સરસ! રંગ રેડાઈ ગયો.");
+ }
+
+ render();
+}
+
+function checkWin(){
+ return bottles.every(b=>
+  b.length===0||(b.length===4&&b.every(c=>c===b[0]))
+ );
+}
+
+function restartLevel(){
+ bottles=startLayout.map(b=>[...b]);
+ selected=-1;
+ moves=0;
+ won=false;
+ busy=false;
+ document.getElementById("nextBtn").disabled=true;
+ say("લેવલ ફરી શરૂ થયો.");
+ render();
+}
+
+function nextLevel(){
+ if(!won)return;
+ levelNumber++;
+ loadLevel();
+}
+
+function goHome(){
+ showScreen("menu");
+}
+</script>
+</body>
+</html>
